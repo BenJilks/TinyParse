@@ -1,0 +1,12 @@
+project TinyParse
+
+Open        \(
+Close       \)
+OpenNode    <
+CloseNode   >
+Named       :
+
+Set         set
+Property    ".*"
+Keyword     [a-zA-Z0-9_]+
+Symbol      [!-/:-?[-`{-~]+
