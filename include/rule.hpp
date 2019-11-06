@@ -6,25 +6,29 @@ using std::vector;
 namespace TinyParse
 {
 
-    class ParseRule
+    class Rule
     {
     public:
-        ParseRule(Lexer &lex);
+        Rule(Lexer &lex);
 
-        enum class OperationType
+        enum class NodeType
         {
-            None
+            RuleList,
+            Keyword,
+            LexNode
         };
 
         struct Node
         {
             vector<Node*> children;
             string value;
-            OperationType op;
+            NodeType type;
         };
 
     private:
-        Node *parse_node(Lexer &lex);
+        Node *parse_node(Lexer &lex, Node *parent);
+        Node *parse_keyword(Lexer &lex, Node *parent);
+        Node *parse_lex_node(Lexer &lex, Node *parent);
 
     };
 

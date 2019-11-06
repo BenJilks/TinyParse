@@ -1,5 +1,6 @@
 #pragma once
 #include "tinylex.hpp"
+#include "rule.hpp"
 
 namespace TinyParse
 {
@@ -11,8 +12,8 @@ namespace TinyParse
         
     private:
         void parse_set(Lexer &lex);
+        void parse_rule(Lexer &lex);
 
-        string test;
 
     };
 
