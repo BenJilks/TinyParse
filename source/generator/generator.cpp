@@ -12,7 +12,32 @@ Generator::Generator(string file_path) :
     out_file = std::ofstream(file_path);
 }
 
-void Generator::add_rule(Rule *rule)
+Rule::Node *Generator::get_entry_node(Rule::Node *node)
+{
+    switch (node->type)
+    {
+        case Rule::NodeKeyword: return node;
+        case Rule::NodeToken: 
+        {
+            const Rule *rule = find_rule(node->value);
+            if (rule != nullptr)
+                return get_entry_node(rule->get_root());
+            return node;
+        }
+    }
+    
+    if (node->children.size() > 0)
+        return get_entry_node(node->children[0]);
+    
+    return nullptr;
+}
+
+void Generator::add_define(string name, string value)
+{
+    defines[value] = name;
+}
+
+void Generator::add_rule(Rule rule)
 {
     rules.push_back(rule);
 }
@@ -24,7 +49,23 @@ void Generator::write_string(string msg)
 
 void Generator::write_line(string line)
 {
+    for (int i = 0; i < scope; i++)
+        out << "\t";
     out << line << std::endl;
+}
+
+bool Generator::has_define(string value)
+{
+    return defines.find(value) != defines.end();
+}
+
+const Rule *Generator::find_rule(string name) const
+{
+    for (int i = 0; i < rules.size(); i++)
+        if (rules[i].get_name() == name)
+            return &rules[i];
+    
+    return nullptr;
 }
 
 static bool file_exists(string name)

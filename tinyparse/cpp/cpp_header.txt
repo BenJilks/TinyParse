@@ -1,12 +1,11 @@
 
     #include <vector>
 
-    template<typename Token>
+    template<typename Token, typename TokenType>
     class Node
     {
     public:
-        Node(Node *parent) :
-            parent(parent) {}
+        Node() {}
 
     private:
         Node *parent;

@@ -9,10 +9,11 @@ using namespace TinyParse;
 int main()
 {
     Lexer lex("test.tinyparse");
-    GeneratorCpp gen("test.hpp");
-    Parser parser(lex, gen);
+    GeneratorCpp gen("test_project/test.hpp");
+    Parser *parser = new Parser(lex, gen);
     gen.generate("test");
 
     lex.report_errors();
+    delete parser;
     return 0;
 }

@@ -7,6 +7,7 @@ Parser::Parser(Lexer &lex, Generator &gen)
     {
         switch (lex.get_look().type)
         {
+            case Token::TokenType::Define: parse_define(lex, gen); break;
             case Token::TokenType::Set: parse_set(lex, gen); break;
             case Token::TokenType::Keyword: parse_rule(lex, gen); break;
             default: 
@@ -14,6 +15,16 @@ Parser::Parser(Lexer &lex, Generator &gen)
                 lex.next();
         }
     }
+}
+
+void Parser::parse_define(Lexer &lex, Generator &gen)
+{
+    lex.match(Token::TokenType::Define, "define");
+    string name = lex.read_data(lex.next());
+    lex.match(Token::TokenType::As, "as");
+    string value = lex.read_data(lex.next());
+
+    gen.add_define(name, value);
 }
 
 void Parser::parse_set(Lexer &lex, Generator &gen)
@@ -33,12 +44,7 @@ void Parser::parse_rule(Lexer &lex, Generator &gen)
     Token name = lex.match(Token::TokenType::Keyword, "Rule Name");
     string rule_name = lex.read_data(name);
     Rule rule(lex, rule_name);
-    rules.push_back(rule);
-    printf("%i\n", rule_name.length());
-
-    Rule *ref = &rules[rules.size() - 1];
-    add_dependency(ref);
-    gen.add_rule(ref);
+    gen.add_rule(rule);
 
     std::cout << "Read rule '" << rule_name << "'" << std::endl;
 }

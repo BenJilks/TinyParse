@@ -18,7 +18,13 @@ namespace TinyParse
 		void generate_list(Rule::Node *node);
 		void generate_keyword(Rule::Node *node);
 		void generate_token(Rule::Node *node);
-        void generate_rule(Rule *rule);
+        void generate_optional(Rule::Node *node);
+        void generate_any(Rule::Node *node);
+        void generate_one_or_more(Rule::Node *node);
+
+        string find_type_name(string name);
+        void generate_rule_vars(Rule &rule);
+        void generate_rule(Rule &rule);
 
     };
 

@@ -14,6 +14,7 @@ namespace TinyParse
     private:
         vector<Rule> rules;
 
+        void parse_define(Lexer &lex, Generator &gen);
         void parse_set(Lexer &lex, Generator &gen);
         void parse_rule(Lexer &lex, Generator &gen);
 
