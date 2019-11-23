@@ -10,7 +10,7 @@ Rule::Rule(Lexer &lex, string name) :
 Rule::Node *Rule::parse_node(Lexer &lex, Rule::Node *parent)
 {
     Node *node = new Node;
-    node->type = NodeType::RuleList;
+    node->type = NodeType::NodeList;
 
     lex.match(Token::TokenType::Open, "(");
     while (lex.get_look().type != Token::TokenType::Close)
@@ -36,7 +36,7 @@ Rule::Node *Rule::parse_keyword(Lexer &lex, Rule::Node *parent)
 {
     // Read the single keyword or symbol token
     Node *node = new Node;
-    node->type = NodeType::Keyword;
+    node->type = NodeType::NodeKeyword;
     node->value = lex.read_data(lex.next());
     node->has_label = false;
     parent->children.push_back(node);
@@ -46,7 +46,7 @@ Rule::Node *Rule::parse_keyword(Lexer &lex, Rule::Node *parent)
 Rule::Node *Rule::parse_lex_node(Lexer &lex, Rule::Node *parent)
 {
     Node *node = new Node;
-    node->type = NodeType::LexNode;
+    node->type = NodeType::NodeToken;
     node->has_label = false;
 
     lex.match(Token::TokenType::OpenNode, "<");

@@ -14,7 +14,10 @@ namespace TinyParse
 
     private:
         void generate_definitions();
-        void generate_rule_parse(Rule *rule);
+        void generate_rule_node(Rule::Node *node);
+		void generate_list(Rule::Node *node);
+		void generate_keyword(Rule::Node *node);
+		void generate_token(Rule::Node *node);
         void generate_rule(Rule *rule);
 
     };

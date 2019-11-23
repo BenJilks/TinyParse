@@ -1,9 +1,34 @@
 #include "generator/generator_cpp.hpp"
 using namespace TinyParse;
 
-void GeneratorCpp::generate_rule_parse(Rule *rule)
+void GeneratorCpp::generate_list(Rule::Node *node)
 {
-    
+	for (auto child : node->children)
+		generate_rule_node(child);
+}
+
+void GeneratorCpp::generate_keyword(Rule::Node *node)
+{
+	write_line("\t\t\tlexer.match(TokenType::" + 
+		node->value + ", \"" + node->value + "\");");
+}
+
+void GeneratorCpp::generate_token(Rule::Node *node)
+{
+	write_line("\t\t\t" + node->label + " = " +
+		"lexer.match(TokenType::" + node->value + 
+		"\"" + node->label + "\");");
+}
+
+void GeneratorCpp::generate_rule_node(Rule::Node *node)
+{
+	switch (node->type)
+	{
+		case Rule::NodeList: generate_list(node);
+		case Rule::NodeKeyword: generate_keyword(node);
+		case Rule::NodeToken: generate_token(node);
+		default: // Do error
+	}
 }
 
 void GeneratorCpp::generate_rule(Rule *rule)
@@ -14,7 +39,7 @@ void GeneratorCpp::generate_rule(Rule *rule)
 
     write_line("\tpublic:");
     write_line("\t\tNode" + name + "(Node *parent, LexerInterface<Token> &lexer)\n\t\t{");
-    generate_rule_parse(rule);
+    generate_rule_node(rule->get_root());
     write_line("\t\t}");
     for (const auto &label : rule->get_labels())
     {

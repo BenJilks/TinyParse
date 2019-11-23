@@ -16,6 +16,7 @@ namespace TinyParse
         Rule(Lexer &lex, string name);
         inline const auto &get_name() const { return name; }
         inline const auto &get_labels() const { return labels; }
+	inline const auto get_root() const { return root; }
 
         enum class NodeType
         {
