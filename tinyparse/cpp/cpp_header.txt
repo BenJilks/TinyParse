@@ -1,0 +1,14 @@
+
+    #include <vector>
+
+    template<typename Token>
+    class Node
+    {
+    public:
+        Node(Node *parent) :
+            parent(parent) {}
+
+    private:
+        Node *parent;
+
+    };

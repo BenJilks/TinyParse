@@ -1,7 +1,8 @@
 #include "rule.hpp"
 using namespace TinyParse;
 
-Rule::Rule(Lexer &lex)
+Rule::Rule(Lexer &lex, string name) :
+    name(name)
 {
     parse_node(lex, nullptr);
 }
@@ -37,6 +38,7 @@ Rule::Node *Rule::parse_keyword(Lexer &lex, Rule::Node *parent)
     Node *node = new Node;
     node->type = NodeType::Keyword;
     node->value = lex.read_data(lex.next());
+    node->has_label = false;
     parent->children.push_back(node);
     return node;
 }
@@ -45,12 +47,19 @@ Rule::Node *Rule::parse_lex_node(Lexer &lex, Rule::Node *parent)
 {
     Node *node = new Node;
     node->type = NodeType::LexNode;
+    node->has_label = false;
 
     lex.match(Token::TokenType::OpenNode, "<");
-    string name = lex.read_data(lex.next());
+    node->value = lex.read_data(lex.next());
+    if (lex.get_look().type == Token::TokenType::Named)
+    {
+        lex.match(Token::TokenType::Named, ":");
+        node->label = lex.read_data(lex.next());
+        node->has_label = true;
+        labels.push_back(std::make_pair(node->label, node->value));
+    }
     lex.match(Token::TokenType::CloseNode, ">");
 
-    node->value = name;
     parent->children.push_back(node);
     return node;
 }
