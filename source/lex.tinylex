@@ -1,17 +1,10 @@
 project TinyParse
 
+Project     project
+Of          :
 Open        \(
 Close       \)
 OpenNode    <
 CloseNode   >
-Named       :
-Optional    ?
-Any         *
-OneOrMore   +
 
-Define      define
-As          as
-Set         set
-Property    ".*"
-Keyword     [a-zA-Z0-9_]+
-Symbol      [!-),-/:;=@[-`{-~]+
+Name        [a-zA-Z_][a-zA-Z0-9_]*

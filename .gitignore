@@ -1,2 +1,3 @@
 build/
-include/tinylex.hpp
+.vscode/
+include/tinylex.h

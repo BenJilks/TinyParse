@@ -1,0 +1,35 @@
+
+#include <stdio.h>
+
+#ifndef TINYLEX_H
+#define TINYLEX_H
+
+typedef struct _Token
+{
+    int data_index;
+    int len;
+    char type;
+
+    int line_index;
+    int line_no, column_no;
+    const char *type_name;
+} Token;
+
+typedef struct _LexerStream
+{
+    FILE *file;
+    int index, line_index;
+    int line, column;
+    int eof_flag;
+
+    char *cache;
+    Token look;
+} LexerStream;
+
+LexerStream lexer_stream_open(const char *file_path);
+void lexer_stream_close(LexerStream *stream);
+char lexer_read_char(LexerStream *lex, int index);
+char *lexer_read_buffer(LexerStream *lex, int index, int len);
+void lexer_error(LexerStream *lex, Token token, const char *error);
+
+#endif // TINYLEX_H
