@@ -73,25 +73,74 @@ static void generate_data_types(
     })
 }
 
+static void generate_keyword(
+    FILE *output, 
+    RuleNode *node, 
+    LexerStream *lex,
+    Parser *parser,
+    int indent)
+{
+    int i;
+    char name[80];
+    Token name_token;
+
+    name_token = node->value;
+    lexer_read_string(lex, name_token, name);
+
+    for (i = 0; i < indent + 1; i++)
+        fprintf(output, "\t");
+    
+    fprintf(output, "%s_match(%s_%s, \"%s\");\n",
+        parser->project_name, parser->project_name,
+        name, name);
+}
+
+static void generate_label(
+    FILE *output, 
+    RuleNode *node, 
+    LexerStream *lex,
+    Parser *parser,
+    int indent)
+{
+    
+}
+
 static void generate_rule_node(
     FILE *output, 
     RuleNode *node, 
+    LexerStream *lex,
+    Parser *parser,
     int indent)
 {
     switch (node->type)
     {
         case RULE_EXPRESSION: 
             if (node->child)
-                generate_rule_node(output, node->child, indent); 
+                generate_rule_node(output, node->child, 
+                    lex, parser, indent); 
+            break;
+        
+        case RULE_KEYWORD:
+            generate_keyword(output, node, 
+                lex, parser, indent);
+            break;
+        
+        case RULE_VALUE:
+            generate_label(output, node, 
+                lex, parser, indent);
             break;
     }
 
     if (node->next)
-        generate_rule_node(output, node->next, indent);
+    {
+        generate_rule_node(output, node->next, 
+            lex, parser, indent);
+    }
 }
 
 static void generate_implement(
     FILE *output, 
+    LexerStream *lex,
     Parser *parser)
 {
     FOR_EACH_RULE(rule, 
@@ -102,7 +151,7 @@ static void generate_implement(
         fprintf(output, "{\n");
         fprintf(output, "\t%sNode *node = malloc(sizeof(%sNode));\n", 
             name, name);
-        generate_rule_node(output, rule.root, 0);
+        generate_rule_node(output, rule.root, lex, parser, 0);
         fprintf(output, "\treturn node;\n");
         fprintf(output, "}\n");
     })
@@ -122,6 +171,6 @@ void generate_c(
     fprintf(output, "\n#endif // TINYPARSER_H\n");
 
     fprintf(output, "\n#ifdef TINYPARSE_IMPLEMENT\n");
-    generate_implement(output, parser);
+    generate_implement(output, lex, parser);
     fprintf(output, "\n#endif // TINYPARSE_IMPLEMENT\n");
 }
