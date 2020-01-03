@@ -1,4 +1,5 @@
 #include "rule.h"
+#include "debug.h"
 #include <stdlib.h>
 
 #define RULE_BUFFER_SIZE 80
@@ -121,11 +122,13 @@ Rule rule_parse(
     Rule rule;
 
     name = tinyparse_match(lex, TinyParse_Name, "Name");
+    lexer_read_string(lex, name, rule.name);
+    LOG("Parsing rule '%s'\n", rule.name);
+
     rule.label_count = 0;
     rule.label_buffer_size = RULE_BUFFER_SIZE;
     rule.labels = malloc(rule.label_buffer_size * sizeof(RuleNode*));
     rule.root = parse_expression(&rule, lex);
-    lexer_read_string(lex, name, rule.name);
 
     return rule;
 }

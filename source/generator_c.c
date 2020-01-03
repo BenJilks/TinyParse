@@ -1,5 +1,6 @@
 #include "generator.h"
 #include "c_header.h"
+#include "FSM.h"
 
 #define FOR_EACH_RULE(item, do) \
 { \
@@ -95,66 +96,20 @@ static void generate_keyword(
         name, name);
 }
 
-static void generate_label(
-    FILE *output, 
-    RuleNode *node, 
-    LexerStream *lex,
-    Parser *parser,
-    int indent)
-{
-    
-}
-
-static void generate_rule_node(
-    FILE *output, 
-    RuleNode *node, 
-    LexerStream *lex,
-    Parser *parser,
-    int indent)
-{
-    switch (node->type)
-    {
-        case RULE_EXPRESSION: 
-            if (node->child)
-                generate_rule_node(output, node->child, 
-                    lex, parser, indent); 
-            break;
-        
-        case RULE_KEYWORD:
-            generate_keyword(output, node, 
-                lex, parser, indent);
-            break;
-        
-        case RULE_VALUE:
-            generate_label(output, node, 
-                lex, parser, indent);
-            break;
-    }
-
-    if (node->next)
-    {
-        generate_rule_node(output, node->next, 
-            lex, parser, indent);
-    }
-}
-
-static void generate_implement(
-    FILE *output, 
+void generate_implement(
+    FILE* output,
     LexerStream *lex,
     Parser *parser)
 {
-    FOR_EACH_RULE(rule, 
-    {
-        fprintf(output, "\n%sNode *parse_%s(\n\tLexerStream *lex)\n", 
-            name, name);
+    int i, j;
 
-        fprintf(output, "{\n");
-        fprintf(output, "\t%sNode *node = malloc(sizeof(%sNode));\n", 
-            name, name);
-        generate_rule_node(output, rule.root, lex, parser, 0);
-        fprintf(output, "\treturn node;\n");
-        fprintf(output, "}\n");
-    })
+    for (i = 0; i < parser->table_size; i++)
+    {
+        printf("%i: ", i);
+        for (j = 0; j < parser->table_width; j++)
+            printf("%i, ", parser->table[i * parser->table_width + j]);
+        printf("\n");
+    }
 }
 
 void generate_c(

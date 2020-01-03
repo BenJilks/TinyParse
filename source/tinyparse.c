@@ -18,6 +18,7 @@ int main()
 
     tinyparse_init(&lex);
     parser_parse(&parser, &lex);
+    parser_compile_and_link(&parser, &lex);
     generate_c(output, &lex, &parser);
 
     parser_free(&parser);

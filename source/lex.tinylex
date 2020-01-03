@@ -1,6 +1,7 @@
 project TinyParse
 
 Project     project
+Define      define
 Of          :
 Open        \(
 Close       \)

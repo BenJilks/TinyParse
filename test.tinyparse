@@ -1,3 +1,10 @@
 project TestProject
 
-Function    ( func < test : lolz > )
+define tokens
+(
+    func    Func
+    test    Test
+)
+
+Function    ( Testing )
+Testing     ( test < func : lolz > )
