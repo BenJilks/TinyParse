@@ -1,5 +1,6 @@
 #include "generator.h"
 #include "c_header.h"
+#include "c_implement.h"
 #include "FSM.h"
 
 #define FOR_EACH_RULE(item, do) \
@@ -103,13 +104,20 @@ void generate_implement(
 {
     int i, j;
 
+    fprintf(output, "\n#define TABLE_WIDTH %i\n", parser->table_width);
+    fprintf(output, "#define ENTRY_POINT %i\n", parser->entry_index);
+
+    fprintf(output, "\nstatic char table[] = \n{\n");
     for (i = 0; i < parser->table_size; i++)
     {
-        printf("%i: ", i);
+        fprintf(output, "\t");
         for (j = 0; j < parser->table_width; j++)
-            printf("%i, ", parser->table[i * parser->table_width + j]);
-        printf("\n");
+            fprintf(output, "%i, ", parser->table[i * parser->table_width + j]);
+        fprintf(output, "\n");
     }
+    fprintf(output, "};\n");
+
+    fputs(template_c_implement, output);
 }
 
 void generate_c(

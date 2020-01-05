@@ -215,6 +215,7 @@ static void link_rule(
     int to_state, from_state;
     Link link;
 
+    // Mark calls
     for (i = 0; i < rule->link_count; i++)
     {
         link = rule->links[i];
@@ -232,19 +233,45 @@ static void link_rule(
     }
 }
 
+static void mark_return_paths(
+    Parser *parser, 
+    FSM *rule)
+{
+    int i, j;
+    int end_state;
+
+    // Mark return paths
+    for (i = 0; i < rule->endings.count; i++)
+    {
+        end_state = rule->endings.states[i];
+        for (j = 0; j < parser->table_size; j += 2)
+        {
+            // If there's a transition pointing to the 
+            // ending state, mark as a return path
+            if (parser->table[j] == end_state)
+                parser->table[j + 1] |= COMMAND_RETURN;
+        }
+    }
+}
+
 static void link_compiled_rules(
     Parser *parser, 
-    FSM *compiled_rules)
+    FSM *compiled_rules,
+    const char *entry_point)
 {
     FSM *rule;
     int start, to_state;
+    int entry_index;
     int i, j;
 
     // Find total table size
     parser->table_size = 0;
+    parser->entry_index = -1;
     for (i = 0; i < parser->rule_count; i++)
     {
         rule = &compiled_rules[i];
+        if (!strcmp(parser->rules[i].name, entry_point))
+            parser->entry_index = parser->table_size;
 
         rule->start_index = parser->table_size;
         parser->table_size += rule->count;
@@ -274,11 +301,16 @@ static void link_compiled_rules(
     // Parse links to sub rules
     for (i = 0; i < parser->rule_count; i++)
         link_rule(parser, &compiled_rules[i], compiled_rules);
+
+    // Mark return paths
+    for (i = 0; i < parser->rule_count; i++)
+        mark_return_paths(parser, &compiled_rules[i]);
 }
 
 void parser_compile_and_link(
     Parser *parser, 
-    LexerStream *lex)
+    LexerStream *lex,
+    const char *entry_point)
 {
     FSM *compiled_rules;
     int i;
@@ -296,7 +328,9 @@ void parser_compile_and_link(
     }
 
     // Link and free
-    link_compiled_rules(parser, compiled_rules);
+    link_compiled_rules(parser, 
+        compiled_rules, entry_point);
+    
     free(compiled_rules);
 }
 

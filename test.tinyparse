@@ -6,5 +6,5 @@ define tokens
     test    Test
 )
 
-Function    ( Testing )
+Function    ( Testing test )
 Testing     ( test < func : lolz > )

@@ -1,0 +1,54 @@
+
+#include <stdio.h>
+
+#define COMMAND_NOP     0b000
+#define COMMAND_PUSH    0b001
+#define COMMAND_CALL    0b010
+#define COMMAND_RETURN  0b100
+
+void tinyparse_parse(
+    LexerStream *lex)
+{
+    // State
+    int state;
+    int next_state, next_commands;
+    int next_index;
+
+    // Stacks
+    int call_stack_pointer;
+    int call_stack[80];
+
+    state = ENTRY_POINT;
+    call_stack_pointer = 1;
+    while (!lex->eof_flag)
+    {
+        // Get next state
+        next_index = state * TABLE_WIDTH + lex->look.type * 2;
+        next_state = table[next_index];
+        next_commands = table[next_index + 1];
+        printf("%i -- %s --> %i \t\t{ %i %i }\n", state, 
+            lex->look.type_name, next_state, next_commands, COMMAND_RETURN);
+
+        // There was a syntax error
+        if (next_state == -1)
+        {
+            lexer_error(lex, lex->look, 
+                "Unexpected token");
+            testproject_next(lex);
+            return;
+        }
+
+        // Set next state and run command
+        if (next_commands & COMMAND_CALL) call_stack[call_stack_pointer++] = state + 1;
+        if (next_commands & COMMAND_RETURN) next_state = call_stack[--call_stack_pointer];
+        state = next_state;
+        testproject_next(lex);
+
+        // If a return command has been called in the 
+        // outer most scope, this is an accepting state
+        if (call_stack_pointer <= 0)
+            break;
+    }
+
+    printf("Accepted!!!\n");
+}

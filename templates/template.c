@@ -47,6 +47,7 @@ int main(int argc, char *argv[])
     template_dir = argv[1];
 
     compile_template("c/c_header.txt", "c_header.h", "c_header");
+    compile_template("c/c_implement.txt", "c_implement.h", "c_implement");
  
     return 0;
 }

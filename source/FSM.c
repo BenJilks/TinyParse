@@ -1,13 +1,6 @@
 #include "FSM.h"
 #include "debug.h"
 
-#define BUFFER_SIZE 80
-
-#define COMMAND_NOP     0b000
-#define COMMAND_PUSH    0b001
-#define COMMAND_CALL    0b010
-#define COMMAND_RETURN  0b100
-
 static int new_state(
     FSM *fsm,
     Parser *parser)

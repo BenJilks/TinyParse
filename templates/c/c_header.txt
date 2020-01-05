@@ -1,8 +1,8 @@
 
 #include <stdio.h>
 
-#ifndef TINYLEX_H
-#define TINYLEX_H
+#ifndef LEXER_H
+#define LEXER_H
 
 typedef struct _Token
 {
@@ -32,4 +32,11 @@ char lexer_read_char(LexerStream *lex, int index);
 char *lexer_read_buffer(LexerStream *lex, int index, int len);
 void lexer_error(LexerStream *lex, Token token, const char *error);
 
-#endif // TINYLEX_H
+#endif // LEXER_H
+
+#ifndef TINYPARSE_H
+#define TINYPARSE_H
+
+void tinyparse_parse(LexerStream *lex);
+
+#endif // TINYPARSE_H
