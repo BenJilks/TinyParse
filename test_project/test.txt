@@ -1,1 +1,1 @@
-test func test
+test

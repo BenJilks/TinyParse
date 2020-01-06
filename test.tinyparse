@@ -6,5 +6,4 @@ define tokens
     test    Test
 )
 
-Function    ( < Testing : node > test )
-Testing     ( < test : idk > < func : lolz > )
+Function    ( func | test )

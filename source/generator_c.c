@@ -24,8 +24,6 @@ static void generate_headers(
     FOR_EACH_RULE(rule, 
     {
         fprintf(output, "\ntypedef struct _%sNode %sNode;\n", name, name);
-        fprintf(output, "%sNode *parse_%s(LexerStream *lex);\n", 
-            name, name);
     })
 }
 
