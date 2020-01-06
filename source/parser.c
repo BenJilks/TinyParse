@@ -185,23 +185,27 @@ static void link_state(
     FSM *rule,
     int from_state,
     int to_state,
+    int return_state,
     int commands)
 {
     int start, i;
     int index;
     char transition;
+    char from_commands;
     
     // Copy the transitions from the to state into the from state,
     // this will make it so it jumps into the sub state
     start = rule->start_index;
     index = from_state * parser->table_width;
-    for (i = 0; i < parser->table_width; i += 2)
+    for (i = 0; i < parser->table_width; i += STATE_WIDTH)
     {
         transition = parser->table[to_state * parser->table_width + i];
+        from_commands = parser->table[to_state * parser->table_width + i + 1];
         if (transition != -1)
         {
             parser->table[index + i] = transition;
-            parser->table[index + i + 1] = commands;
+            parser->table[index + i + 1] = commands | from_commands;
+            parser->table[index + i + 2] = return_state;
         }
     }
 }
@@ -228,7 +232,7 @@ static void link_rule(
             LOG("\t => Link %i -> %i\n", from_state, to_state);
 
             link_state(parser, rule, from_state, 
-                to_state, link.commands);
+                to_state, link.to_state, link.commands);
         }
     }
 }
@@ -243,13 +247,16 @@ static void mark_return_paths(
     // Mark return paths
     for (i = 0; i < rule->endings.count; i++)
     {
-        end_state = rule->endings.states[i];
-        for (j = 0; j < parser->table_size; j += 2)
+        end_state = rule->endings.states[i] + rule->start_index;
+        for (j = 0; j < parser->table_size * parser->table_width; j += STATE_WIDTH)
         {
             // If there's a transition pointing to the 
             // ending state, mark as a return path
             if (parser->table[j] == end_state)
+            {
                 parser->table[j + 1] |= COMMAND_RETURN;
+                parser->table[j + 2] = 21;
+            }
         }
     }
 }
@@ -287,7 +294,7 @@ static void link_compiled_rules(
         // Copy table rows into the main table, fixing state indices
         rule = &compiled_rules[i];
         start = rule->start_index * parser->table_width;
-        for (j = 0; j < rule->count * parser->table_width; j += 2)
+        for (j = 0; j < rule->count * parser->table_width; j += STATE_WIDTH)
         {
             to_state = rule->table[j];
             if (to_state != -1)
@@ -317,7 +324,7 @@ void parser_compile_and_link(
 
     // Calculate the width of each 
     // row in the parser table
-    parser->table_width = parser->token_count * 2;
+    parser->table_width = parser->token_count * STATE_WIDTH;
 
     // Compile each rule
     compiled_rules = malloc(parser->rule_count * sizeof(FSM));

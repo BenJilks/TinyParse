@@ -52,10 +52,12 @@ TestingNode *parse_Testing(LexerStream *lex);
 
 struct _FunctionNode
 {
+	TestingNode *node;
 };
 
 struct _TestingNode
 {
+	Token idk;
 	Token lolz;
 };
 
@@ -63,25 +65,28 @@ struct _TestingNode
 
 #ifdef TINYPARSE_IMPLEMENT
 
-#define TABLE_WIDTH 4
+#define TABLE_WIDTH 6
 #define ENTRY_POINT 0
 
 static char table[] = 
 {
-	-1, -1, 4, 2, 
-	-1, -1, 2, 0, 
-	-1, -1, -1, -1, 
-	-1, -1, 4, 0, 
-	5, 4, -1, -1, 
-	-1, -1, -1, -1, 
+	-1, -1, -91, 4, 13, 1, 
+	-1, -1, -91, 2, 2, 21, 
+	-1, -1, -91, -1, -1, -91, 
+	-1, -1, -91, 4, 8, -91, 
+	5, 10, 21, -1, -1, -91, 
+	-1, -1, -91, -1, -1, -91, 
 };
 
 #include <stdio.h>
 
-#define COMMAND_NOP     0b000
-#define COMMAND_PUSH    0b001
-#define COMMAND_CALL    0b010
-#define COMMAND_RETURN  0b100
+#define STATE_WIDTH 3
+
+#define COMMAND_NOP         0b0000
+#define COMMAND_PUSH        0b1000
+#define COMMAND_CALL        0b0100
+#define COMMAND_RETURN      0b0010
+#define COMMAND_PUSH_SUB    0b0001
 
 void tinyparse_parse(
     LexerStream *lex)
@@ -89,22 +94,27 @@ void tinyparse_parse(
     // State
     int state;
     int next_state, next_commands;
-    int next_index;
+    int next_arg, next_index;
+    int call_command;
 
     // Stacks
     int call_stack_pointer;
     int call_stack[80];
 
     state = ENTRY_POINT;
-    call_stack_pointer = 1;
+    call_stack_pointer = 2;
+    call_stack[0] = 0;
+    call_stack[1] = COMMAND_PUSH;
+
     while (!lex->eof_flag)
     {
         // Get next state
-        next_index = state * TABLE_WIDTH + lex->look.type * 2;
+        next_index = state * TABLE_WIDTH + lex->look.type * STATE_WIDTH;
         next_state = table[next_index];
         next_commands = table[next_index + 1];
+        next_arg = table[next_index + 2];
         printf("%i -- %s --> %i \t\t{ %i %i }\n", state, 
-            lex->look.type_name, next_state, next_commands, COMMAND_RETURN);
+            lex->look.type_name, next_state, next_commands, next_arg);
 
         // There was a syntax error
         if (next_state == -1)
@@ -116,8 +126,29 @@ void tinyparse_parse(
         }
 
         // Set next state and run command
-        if (next_commands & COMMAND_CALL) call_stack[call_stack_pointer++] = state + 1;
-        if (next_commands & COMMAND_RETURN) next_state = call_stack[--call_stack_pointer];
+        if (next_commands & COMMAND_CALL) 
+        {
+            call_stack[call_stack_pointer] = next_arg;
+            call_stack[call_stack_pointer + 1] = 0;
+            if (next_commands & COMMAND_PUSH_SUB)
+            {
+                printf("Push sub node %s\n", lex->look.type_name);
+                call_stack[call_stack_pointer + 1] |= COMMAND_PUSH;
+            }
+            call_stack_pointer += 2;
+        }
+
+        if (next_commands & COMMAND_RETURN) 
+        {
+            call_command = call_stack[--call_stack_pointer];
+            next_state = call_stack[--call_stack_pointer];
+            if (call_command & COMMAND_PUSH)
+                printf("Push sub node now of size %i\n", next_arg);
+        }
+
+        if (next_commands & COMMAND_PUSH) 
+            printf("Push token %s\n", lex->look.type_name);
+        
         state = next_state;
         testproject_next(lex);
 

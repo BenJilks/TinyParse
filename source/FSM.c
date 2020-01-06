@@ -50,18 +50,24 @@ static EndingStates compile_sub_call(
         return endings;
     }
 
-    // Create linking data to be linked later
-    Link link;
-    link.from_states = from;
-    link.to_rule = rule_index;
-    link.commands = commands | COMMAND_CALL;
-    fsm->links[fsm->link_count] = link;
-    fsm->link_count += 1;
-
     // Create return state
     return_state = new_state(fsm, parser);
     endings.states[0] = return_state;
     endings.count = 1;
+
+    // Create linking data to be linked later
+    Link link;
+    link.from_states = from;
+    link.to_state = return_state;
+    link.to_rule = rule_index;
+    link.commands = commands | COMMAND_CALL;
+    if (link.commands & COMMAND_PUSH)
+    {
+        link.commands ^= COMMAND_PUSH;
+        link.commands |= COMMAND_PUSH_SUB;
+    }
+    fsm->links[fsm->link_count] = link;
+    fsm->link_count += 1;
 
     return endings;
 }
@@ -97,10 +103,12 @@ static EndingStates compile_match(
     for (i = 0; i < from.count; i++)
     {
         int from_index;
+        int table_index;
 
         from_index = from.states[i] * parser->table_width;
-        fsm->table[from_index + token_index * 2] = state;
-        fsm->table[from_index + token_index * 2 + 1] = commands;
+        table_index = from_index + token_index * STATE_WIDTH;
+        fsm->table[table_index] = state;
+        fsm->table[table_index + 1] = commands;
     }
 
     // Make the end this state
@@ -161,7 +169,7 @@ FSM fsm_compile(
     LexerStream *lex,
     Parser *parser)
 {
-    EndingStates from, endings;
+    EndingStates from;
     FSM fsm;
     int start;
     LOG("Compiling rule '%s'\n", rule->name);
@@ -178,7 +186,7 @@ FSM fsm_compile(
     from.count = 1;
 
     // Compile the rule
-    endings = compile_node(&fsm, lex, parser, 
+    fsm.endings = compile_node(&fsm, lex, parser, 
         rule->root, from);
 
     return fsm;
