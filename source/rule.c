@@ -70,6 +70,40 @@ static RuleNode *parse_node(
     return NULL;
 }
 
+static RuleNode *parse_operation(
+    Rule *rule,
+    LexerStream *lex,
+    RuleNode *left)
+{
+    RuleNode *node;
+
+    node = malloc(sizeof(RuleNode));
+    node->next = NULL;
+    node->child = left;
+    node->type = RULE_OR;
+    while (lex->look.type == TinyParse_Or)
+    {
+        tinyparse_next(lex);
+        left->next = parse_node(rule, lex);
+        left = left->next;
+    }
+
+    return node;
+}
+
+static RuleNode *parse_term(
+    Rule *rule,
+    LexerStream *lex)
+{
+    RuleNode *node;
+
+    node = parse_node(rule, lex);
+    if (lex->look.type == TinyParse_Or)
+        return parse_operation(rule, lex, node);
+
+    return node;
+}
+
 static RuleNode *parse_expression(
     Rule *rule,
     LexerStream *lex)
@@ -88,7 +122,7 @@ static RuleNode *parse_expression(
     while (lex->look.type != TinyParse_Close && !lex->eof_flag)
     {
         // Parse next node
-        next = parse_node(rule, lex);
+        next = parse_term(rule, lex);
         if (!next)
             break;
 

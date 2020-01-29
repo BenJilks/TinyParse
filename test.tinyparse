@@ -6,4 +6,4 @@ define tokens
     test    Test
 )
 
-Function    ( func | test )
+Function    ( func | test func )

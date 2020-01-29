@@ -28,6 +28,30 @@ static int new_state(
     return state;
 }
 
+static EndingStates compile_node(
+    FSM *fsm,
+    LexerStream *lex,
+    Parser *parser,
+    RuleNode *node,
+    EndingStates from);
+
+static void calculate_branch_size(
+    EndingStates *endings,
+    EndingStates *from,
+    int commands,
+    int element_size)
+{
+    // This branches size if the last ones' total 
+    // size plus this element size if it's stored
+    endings->branch_size[0] = from->total_size;
+    if (commands & COMMAND_PUSH)
+        endings->branch_size[0] += element_size;
+
+    // As there's only one branch, the total size 
+    // is the branch size
+    endings->total_size = endings->branch_size[0];
+}
+
 static EndingStates compile_sub_call(
     FSM *fsm,
     LexerStream *lex,    
@@ -51,6 +75,8 @@ static EndingStates compile_sub_call(
     }
 
     // Create return state
+    calculate_branch_size(&endings, &from, 
+        commands, sizeof(void*));
     return_state = new_state(fsm, parser);
     endings.states[0] = return_state;
     endings.count = 1;
@@ -95,7 +121,6 @@ static EndingStates compile_match(
         return compile_sub_call(fsm, lex, parser, 
             alias, token_name, commands, from);
     }
-    printf("%s -> %i\n", token_name, token_index);
 
     // Create a new state and make the 
     // transitions to it
@@ -109,9 +134,13 @@ static EndingStates compile_match(
         table_index = from_index + token_index * STATE_WIDTH;
         fsm->table[table_index] = state;
         fsm->table[table_index + 1] = commands;
+        LOG("%i --%s--> %i\n", from.states[i], 
+            token_name, state);
     }
 
     // Make the end this state
+    calculate_branch_size(&endings, &from, 
+        commands, sizeof(Token));
     endings.states[0] = state;
     endings.count = 1;
     return endings;
@@ -139,7 +168,44 @@ static EndingStates compile_value(
         node->value, COMMAND_PUSH, from);
 }
 
-static EndingStates compile_node(
+static EndingStates compile_or(
+    FSM *fsm,
+    LexerStream *lex,
+    Parser *parser,
+    RuleNode *node,
+    EndingStates from)
+{
+    EndingStates endings, branch;
+    RuleNode *curr;
+
+    LOG("If =>\n");
+    debug_start_scope();
+
+    curr = node->child;
+    while (curr != NULL)
+    {
+        int i;
+
+        // Compile a branch of the if statement from the 
+        // same point and record the endings
+        branch = compile_node(fsm, lex, parser, curr, from);
+        for (i = 0; i < branch.count; i++)
+        {
+            endings.states[endings.count] = branch.states[i];
+            endings.branch_size[endings.count] = branch.branch_size[i];
+            endings.count += 1;
+        }
+
+        // Increment total size and move to the next branch
+        endings.total_size += branch.total_size;
+        curr = curr->next;
+    }
+
+    debug_end_scope();
+    return endings;
+}
+
+static EndingStates compile_expression(
     FSM *fsm,
     LexerStream *lex,
     Parser *parser,
@@ -148,19 +214,37 @@ static EndingStates compile_node(
 {
     EndingStates endings;
 
-    // If the node is null, there's 
-    // nothing to compile
-    if (node == NULL)
-        return from;
+    endings = compile_node(fsm, lex, parser, node, from);
+    if (node->next != NULL)
+    {
+        // If there's another node in the 
+        // sequence, compile that
+        return compile_expression(fsm, lex, parser, 
+            node->next, endings);
+    }
+    return endings;
+}
 
+static EndingStates compile_node(
+    FSM *fsm,
+    LexerStream *lex,
+    Parser *parser,
+    RuleNode *node,
+    EndingStates from)
+{
+    EndingStates endings;
     switch(node->type)
     {
         case RULE_KEYWORD: endings = compile_keyword(fsm, lex, parser, node, from); break;
         case RULE_VALUE: endings = compile_value(fsm, lex, parser, node, from); break;
-        case RULE_EXPRESSION: endings = compile_node(fsm, lex, parser, node->child, from); break;
+        case RULE_OR: endings = compile_or(fsm, lex, parser, node, from); break;
+        case RULE_EXPRESSION: 
+            LOG("Expression => \n");
+            debug_start_scope();
+            endings = compile_expression(fsm, lex, parser, node->child, from); break;
+            debug_end_scope();
     }
 
-    endings = compile_node(fsm, lex, parser, node->next, endings);
     return endings;
 }
 
@@ -186,7 +270,7 @@ FSM fsm_compile(
     from.count = 1;
 
     // Compile the rule
-    fsm.endings = compile_node(&fsm, lex, parser, 
+    fsm.endings = compile_expression(&fsm, lex, parser, 
         rule->root, from);
 
     return fsm;

@@ -7,7 +7,8 @@ typedef enum _RuleType
 {
     RULE_KEYWORD,
     RULE_VALUE,
-    RULE_EXPRESSION
+    RULE_EXPRESSION,
+    RULE_OR
 } RuleType;
 
 typedef struct _RuleNode
