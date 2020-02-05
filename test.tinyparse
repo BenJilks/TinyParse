@@ -4,6 +4,25 @@ define tokens
 (
     func    Func
     test    Test
+    Name    Name
+    O       OpenBlock
+    C       CloseBlock
 )
 
-Function    ( func | test func )
+Function 
+(
+    func < Name : name > 
+        < Block : block >
+)
+
+Block
+(
+    < Statement : statement > 
+    | ( O < Statement : multi_block > C )
+    : type
+)
+
+Statement
+(
+    test
+)

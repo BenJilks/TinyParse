@@ -80,6 +80,16 @@ static EndingStates compile_sub_call(
     return_state = new_state(fsm, parser);
     endings.states[0] = return_state;
     endings.count = 1;
+    endings.mark_type = 0;
+
+#if DEBUG
+    int i;
+    for (i = 0; i < from.count; i++)
+    {
+        LOG("%i ==> %s ==> %i \t", from.states[i], 
+            name, return_state);
+    }
+#endif
 
     // Create linking data to be linked later
     Link link;
@@ -87,14 +97,25 @@ static EndingStates compile_sub_call(
     link.to_state = return_state;
     link.to_rule = rule_index;
     link.commands = commands | COMMAND_CALL;
+
+    // If there's a push command, make it into a push sub
     if (link.commands & COMMAND_PUSH)
     {
         link.commands ^= COMMAND_PUSH;
         link.commands |= COMMAND_PUSH_SUB;
     }
+
+    // If the type should be marked, do so
+    if (from.mark_type)
+    {
+        LOG("mark type, ");
+        link.commands |= COMMAND_MARK_TYPE;
+    }
+
     fsm->links[fsm->link_count] = link;
     fsm->link_count += 1;
 
+    LOG("\n");
     return endings;
 }
 
@@ -129,13 +150,30 @@ static EndingStates compile_match(
     {
         int from_index;
         int table_index;
+        int padding;
 
         from_index = from.states[i] * parser->table_width;
         table_index = from_index + token_index * STATE_WIDTH;
         fsm->table[table_index] = state;
         fsm->table[table_index + 1] = commands;
-        LOG("%i --%s--> %i\n", from.states[i], 
-            token_name, state);
+        LOG("%i --%s--> %i \t\t", from.states[i], 
+            token_name, state, padding);
+        
+        if (from.mark_type)
+        {
+            LOG("mark type, ");
+            fsm->table[table_index + 1] |= COMMAND_MARK_TYPE;
+        }
+
+        // Add padding if needed
+        padding = from.total_size - from.branch_size[i];
+        if (padding > 0)
+        {
+            fsm->table[table_index + 1] |= COMMAND_PADDING;
+            fsm->table[table_index + 2] = padding;
+            LOG("padding: %i, ", padding);
+        }
+        LOG("\n");
     }
 
     // Make the end this state
@@ -143,6 +181,7 @@ static EndingStates compile_match(
         commands, sizeof(Token));
     endings.states[0] = state;
     endings.count = 1;
+    endings.mark_type = 0;
     return endings;
 }
 
@@ -168,6 +207,8 @@ static EndingStates compile_value(
         node->value, COMMAND_PUSH, from);
 }
 
+#define MAX(a, b) (a) > (b) ? (a) : (b)
+
 static EndingStates compile_or(
     FSM *fsm,
     LexerStream *lex,
@@ -180,6 +221,16 @@ static EndingStates compile_or(
 
     LOG("If =>\n");
     debug_start_scope();
+
+    // Set up ending data
+    endings.count = 0;
+    endings.mark_type = 0;
+    endings.total_size = 0;
+
+    // If the statement has a label, 
+    // mark its type
+    if (node->has_label)
+        from.mark_type = 1;
 
     curr = node->child;
     while (curr != NULL)
@@ -197,7 +248,7 @@ static EndingStates compile_or(
         }
 
         // Increment total size and move to the next branch
-        endings.total_size += branch.total_size;
+        endings.total_size = MAX(endings.total_size, branch.total_size);
         curr = curr->next;
     }
 
@@ -241,8 +292,9 @@ static EndingStates compile_node(
         case RULE_EXPRESSION: 
             LOG("Expression => \n");
             debug_start_scope();
-            endings = compile_expression(fsm, lex, parser, node->child, from); break;
+            endings = compile_expression(fsm, lex, parser, node->child, from);
             debug_end_scope();
+            break;
     }
 
     return endings;
@@ -268,6 +320,7 @@ FSM fsm_compile(
     start = new_state(&fsm, parser);
     from.states[0] = start;
     from.count = 1;
+    from.mark_type = 0;
 
     // Compile the rule
     fsm.endings = compile_expression(&fsm, lex, parser, 

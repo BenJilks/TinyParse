@@ -3,7 +3,7 @@
 #include "c_implement.h"
 #include "FSM.h"
 
-#define FOR_EACH_RULE(item, do) \
+#define FOR_EACH_RULE(item, name, do) \
 { \
     int __rule_index; \
     char *name; \
@@ -17,13 +17,30 @@
     } \
 }
 
+#define OUT(output, tab, ...) \
+{ \
+    output_tabs(output, tab); \
+    fprintf(output, __VA_ARGS__); \
+}
+
+static void output_tabs(
+    FILE *output, 
+    int tab)
+{
+    int i;
+    for (i = 0; i < tab; i++)
+        fprintf(output, "\t");
+}
+
 static void generate_headers(
     FILE *output, 
     Parser *parser)
 {
-    FOR_EACH_RULE(rule, 
+    fprintf(output, "\n");
+    FOR_EACH_RULE(rule, name,
     {
-        fprintf(output, "\ntypedef struct _%sNode %sNode;\n", name, name);
+        fprintf(output, "typedef struct _%sNode %sNode;\n", 
+            name, name);
     })
 }
 
@@ -31,24 +48,111 @@ static void generate_label_definition(
     FILE *output, 
     RuleNode *node,
     LexerStream *lex,
-    Parser *parser)
+    Parser *parser,
+    int tab)
 {
     Token label;
     Rule *rule;
     char token_name[80];
+    char label_name[80];
 
     label = node->label;
     lexer_read_string(lex, node->value, token_name);
 
     rule = parser_find_rule(parser, token_name);
     if (rule)
-        fprintf(output, "\t%sNode *", token_name);
+    {
+        OUT(output, tab, "%sNode *", token_name);
+    }
     else
-        fprintf(output, "\tToken ");
+    {
+        OUT(output, tab, "Token ");
+    }
 
-    fwrite(lexer_read_buffer(lex, label.data_index, label.len), 
-        sizeof(char), label.len, output);
+    lexer_read_string(lex, label, label_name);
+    fprintf(output, label_name);
     fprintf(output, ";\n");
+}
+
+static void generate_type_expression(
+    FILE *output,
+    RuleNode *node,
+    LexerStream *lex,
+    Parser *parser,
+    int tab);
+
+static void generate_type_value(
+    FILE *output,
+    RuleNode *node,
+    LexerStream *lex,
+    Parser *parser,
+    int tab)
+{
+    generate_label_definition(output, node, 
+        lex, parser, tab);
+}
+
+static void generate_type_or(
+    FILE *output,
+    RuleNode *node,
+    LexerStream *lex,
+    Parser *parser,
+    int tab)
+{
+    // If it's named, generate a type label
+    if (node->has_label)
+    {
+        char label[80];
+
+        lexer_read_string(lex, node->label, label);
+        OUT(output, tab, "int %s;\n", label);
+    }
+
+    OUT(output, tab, "union\n");
+    OUT(output, tab, "{\n");
+    generate_type_expression(output, node->child, 
+        lex, parser, tab + 1);
+    OUT(output, tab, "};\n");
+}
+
+static void generate_type_sub_expression(
+    FILE *output,
+    RuleNode *node,
+    LexerStream *lex,
+    Parser *parser,
+    int tab)
+{
+    OUT(output, tab, "struct __attribute__((__packed__))\n");
+    OUT(output, tab, "{\n");
+    generate_type_expression(output, node->child, 
+        lex, parser, tab + 1);
+    OUT(output, tab, "};\n");
+}
+
+static void generate_type_expression(
+    FILE *output,
+    RuleNode *node,
+    LexerStream *lex,
+    Parser *parser,
+    int tab)
+{
+    switch (node->type)
+    {
+        case RULE_VALUE: generate_type_value(
+            output, node, lex, parser, tab); break;
+
+        case RULE_EXPRESSION: generate_type_sub_expression(
+            output, node, lex, parser, tab); break;
+
+        case RULE_OR: generate_type_or(
+            output, node, lex, parser, tab); break;
+    }
+
+    if (node->next != NULL)
+    {
+        generate_type_expression(output, node->next, 
+            lex, parser, tab);
+    }
 }
 
 static void generate_data_types(
@@ -56,21 +160,15 @@ static void generate_data_types(
     LexerStream *lex,
     Parser *parser)
 {
-    RuleNode *node;
-    int i;
+    RuleNode *root;
 
-    FOR_EACH_RULE(rule, 
+    FOR_EACH_RULE(rule, name,
     {
-        fprintf(output, "\nstruct _%sNode\n", name);
-        fprintf(output, "{\n");
-        for (i = 0; i < rule.label_count; i++)
-        {
-            node = rule.labels[i];
-            generate_label_definition(
-                output, node, lex, parser);
-        }
+        root = rule.root;
+        fprintf(output, "\nstruct __attribute__((__packed__)) _%sNode\n{\n", name);
+        generate_type_expression(output, root, lex, parser, 1);
         fprintf(output, "};\n");
-    })
+    });
 }
 
 static void generate_keyword(

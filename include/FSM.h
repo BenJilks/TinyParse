@@ -7,17 +7,22 @@
 #define BUFFER_SIZE 80
 #define STATE_WIDTH 3
 
-#define COMMAND_NOP         0b00000
-#define COMMAND_PUSH        0b10000
-#define COMMAND_CALL        0b01000
-#define COMMAND_RETURN      0b00100
-#define COMMAND_PUSH_SUB    0b00010
-#define COMMAND_PADDING     0b00001
+#define COMMAND_NOP         0b000000
+#define COMMAND_PUSH        0b100000
+#define COMMAND_CALL        0b010000
+#define COMMAND_RETURN      0b001000
+#define COMMAND_PUSH_SUB    0b000100
+#define COMMAND_PADDING     0b000010
+#define COMMAND_MARK_TYPE   0b000001
 
 typedef struct _EndingStates
 {
-    int count;
     int states[80];
+    int count;
+
+    // Flag for saving the token 
+    // type to the current node
+    int mark_type;
 
     // Size information
     int branch_size[80];

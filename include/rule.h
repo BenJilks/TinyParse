@@ -18,16 +18,13 @@ typedef struct _RuleNode
 
     Token value, label;
     RuleType type;
+    int has_label;
 } RuleNode;
 
 typedef struct _Rule
 {
     char name[80];
-    
     RuleNode *root;
-    RuleNode **labels;
-    int label_buffer_size;
-    int label_count;
 } Rule;
 
 Rule rule_parse(LexerStream *lex);

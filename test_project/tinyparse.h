@@ -52,24 +52,61 @@ void tinyparse_free_document(Document *doc);
 #define TINYPARSER_H
 
 typedef struct _FunctionNode FunctionNode;
+typedef struct _BlockNode BlockNode;
+typedef struct _StatementNode StatementNode;
 
-struct _FunctionNode
+struct __attribute__((__packed__)) _FunctionNode
 {
+	struct __attribute__((__packed__))
+	{
+		Token name;
+		BlockNode *block;
+	};
+};
+
+struct __attribute__((__packed__)) _BlockNode
+{
+	struct __attribute__((__packed__))
+	{
+		int type;
+		union
+		{
+			StatementNode *statement;
+			struct __attribute__((__packed__))
+			{
+				StatementNode *multi_block;
+			};
+		};
+	};
+};
+
+struct __attribute__((__packed__)) _StatementNode
+{
+	struct __attribute__((__packed__))
+	{
+	};
 };
 
 #endif // TINYPARSER_H
 
 #ifdef TINYPARSE_IMPLEMENT
 
-#define TABLE_WIDTH 6
+#define TABLE_WIDTH 15
 #define ENTRY_POINT 0
 
 static char table[] = 
 {
-	1, 0, 0, 2, 0, 0, 
-	3, 4, 21, -1, -1, 0, 
-	3, 4, 21, -1, -1, 0, 
-	-1, -1, 0, -1, -1, 0, 
+	1, 0, -1, 10, 28, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+	-1, -1, -1, -1, -1, -1, 2, 32, -1, -1, -1, -1, -1, -1, -1, 
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, 6, 21, 3, -1, -1, -1, 
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, 6, 1, -1, -1, -1, -1, 
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 8, 8, -1, 
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+	-1, -1, -1, 10, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
 };
 
 #include <stdio.h>
@@ -89,11 +126,13 @@ static char table[] = {};
 
 #define ALLOCATION_BUFFER 80
 
-#define COMMAND_NOP         0b0000
-#define COMMAND_PUSH        0b1000
-#define COMMAND_CALL        0b0100
-#define COMMAND_RETURN      0b0010
-#define COMMAND_PUSH_SUB    0b0001
+#define COMMAND_NOP         0b000000
+#define COMMAND_PUSH        0b100000
+#define COMMAND_CALL        0b010000
+#define COMMAND_RETURN      0b001000
+#define COMMAND_PUSH_SUB    0b000100
+#define COMMAND_PADDING     0b000010
+#define COMMAND_MARK_TYPE   0b000001
 
 typedef struct _Allocator
 {
@@ -111,13 +150,10 @@ static Allocator create_allocator()
     return alloc;
 }
 
-static void *push(
-    Allocator *alloc, 
-    void *data, 
+static void check_buffer_size(
+    Allocator *alloc,
     int size)
 {
-    void *ptr;
-
     // Check if there's enough memory available
     if (alloc->memory_pointer + size >= alloc->memory_buffer)
     {
@@ -125,15 +161,23 @@ static void *push(
         alloc->memory = realloc(alloc->memory, 
             alloc->memory_buffer);
     }
+}
+
+static void *push(
+    Allocator *alloc, 
+    void *data, 
+    int size)
+{
+    void *ptr;
 
     // Copy memory into allocation buffer   
-    memcpy(alloc->memory + 
-        alloc->memory_pointer, 
-        data, size);
+    check_buffer_size(alloc, size);
+    ptr = alloc->memory + alloc->memory_pointer;
+    memcpy(ptr, data, size);
 
     // Find the next space to allocate
-    ptr = alloc->memory + alloc->memory_pointer;
     alloc->memory_pointer += size;
+    printf("Alloc: %i\n", size);
 
     return ptr;
 }
@@ -143,6 +187,17 @@ static void free_allocator(
 {
     free(alloc->memory);
 }
+
+#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
+#define BYTE_TO_BINARY(byte)  \
+  (byte & 0x80 ? '1' : '0'), \
+  (byte & 0x40 ? '1' : '0'), \
+  (byte & 0x20 ? '1' : '0'), \
+  (byte & 0x10 ? '1' : '0'), \
+  (byte & 0x08 ? '1' : '0'), \
+  (byte & 0x04 ? '1' : '0'), \
+  (byte & 0x02 ? '1' : '0'), \
+  (byte & 0x01 ? '1' : '0') 
 
 Document tinyparse_parse(
     LexerStream *lex)
@@ -174,8 +229,8 @@ Document tinyparse_parse(
         next_state = table[next_index];
         next_commands = table[next_index + 1];
         next_arg = table[next_index + 2];
-        printf("%i -- %s --> %i \t\t{ %i %i }\n", state, 
-            lex->look.type_name, next_state, next_commands, next_arg);
+        printf("%i -- %s --> %i \t\t{ "BYTE_TO_BINARY_PATTERN" %i }\n", state, 
+            lex->look.type_name, next_state, BYTE_TO_BINARY(next_commands), next_arg);
 
         // There was a syntax error
         if (next_state == -1)
@@ -185,6 +240,13 @@ Document tinyparse_parse(
             testproject_next(lex);
 
             break;
+        }
+
+        // Mark type
+        if (next_commands & COMMAND_MARK_TYPE)
+        {
+            printf("Marking type: %s\n", lex->look.type_name);
+            push(&value_stack, (void*)&lex->look.type, sizeof(int));
         }
 
         // Set next state and run command
@@ -200,6 +262,14 @@ Document tinyparse_parse(
             }
 
             call_stack_pointer += 3;
+        }
+
+        // Add padding
+        if (next_commands & COMMAND_PADDING)
+        {
+            printf("Add padding: %i\n", next_arg);
+            check_buffer_size(&value_stack, next_arg);
+            value_stack.memory_pointer += next_arg;
         }
 
         if (next_commands & COMMAND_PUSH) 

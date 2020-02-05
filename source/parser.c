@@ -229,7 +229,7 @@ static void link_rule(
         for (j = 0; j < link.from_states.count; j++)
         {
             from_state = link.from_states.states[i]; 
-            LOG("\t => Link %i -> %i\n", from_state, to_state);
+            LOG(" => Link %i -> %i\n", from_state, to_state);
 
             link_state(parser, rule, from_state, 
                 to_state, link.to_state, link.commands);
@@ -253,10 +253,7 @@ static void mark_return_paths(
             // If there's a transition pointing to the 
             // ending state, mark as a return path
             if (parser->table[j] == end_state)
-            {
                 parser->table[j + 1] |= COMMAND_RETURN;
-                parser->table[j + 2] = 21;
-            }
         }
     }
 }
@@ -302,6 +299,7 @@ static void link_compiled_rules(
 
             parser->table[start + j] = to_state;
             parser->table[start + j + 1] = rule->table[j + 1];
+            parser->table[start + j + 2] = rule->table[j + 2];
         }
     }
 
