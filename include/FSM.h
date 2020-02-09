@@ -47,6 +47,8 @@ typedef struct _FSM
     Link links[80];
     int link_count;
     int start_index;
+    int has_been_linked;
+    int being_linked;
 } FSM;
 
 FSM fsm_compile(Rule *rule, LexerStream *lex, Parser *parser);

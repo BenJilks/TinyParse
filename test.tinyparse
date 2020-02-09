@@ -10,15 +10,16 @@ define tokens
 )
 
 Function 
-(
-    func < Name : name > 
+( 
+    func < Name : name> 
         < Block : block >
 )
 
 Block
 (
-    < Statement : statement > 
-    | ( O < Statement : multi_block > C )
+    < Statement : statement >
+    | ( O <Statement : mult_block> C )
+    | < Function : func >
     : type
 )
 

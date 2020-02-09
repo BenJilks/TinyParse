@@ -314,6 +314,8 @@ FSM fsm_compile(
     fsm.count = 0;
     fsm.buffer_count = 0;
     fsm.link_count = 0;
+    fsm.has_been_linked = 0;
+    fsm.being_linked = 0;
     fsm.table = malloc(1);
 
     // Create a starting state

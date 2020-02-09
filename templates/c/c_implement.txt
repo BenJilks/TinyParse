@@ -119,8 +119,23 @@ Document tinyparse_parse(
         next_state = table[next_index];
         next_commands = table[next_index + 1];
         next_arg = table[next_index + 2];
-        printf("%i -- %s --> %i \t\t{ "BYTE_TO_BINARY_PATTERN" %i }\n", state, 
-            lex->look.type_name, next_state, BYTE_TO_BINARY(next_commands), next_arg);
+
+        printf("%i -- %s --> %i \t\t{ "BYTE_TO_BINARY_PATTERN"( ", state, 
+            lex->look.type_name, next_state, BYTE_TO_BINARY(next_commands));
+        if (next_commands != -1)
+        {
+            if (next_commands & COMMAND_PUSH) printf("push ");
+            if (next_commands & COMMAND_CALL) printf("call ");
+            if (next_commands & COMMAND_RETURN) printf("return ");
+            if (next_commands & COMMAND_PUSH_SUB) printf("push-sub ");
+            if (next_commands & COMMAND_PADDING) printf("padding ");
+            if (next_commands & COMMAND_MARK_TYPE) printf("mark-type ");
+        }
+        else
+        {
+            printf("Not-Accept ");
+        }
+        printf(") %i }\n", next_arg);
 
         // There was a syntax error
         if (next_state == -1)

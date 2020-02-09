@@ -1,5 +1,4 @@
 
-func Lolz
-{
-    test
-}
+func test_func
+    func diff
+        test

@@ -74,8 +74,9 @@ struct __attribute__((__packed__)) _BlockNode
 			StatementNode *statement;
 			struct __attribute__((__packed__))
 			{
-				StatementNode *multi_block;
+				StatementNode *mult_block;
 			};
+			FunctionNode *func;
 		};
 	};
 };
@@ -96,16 +97,17 @@ struct __attribute__((__packed__)) _StatementNode
 
 static char table[] = 
 {
-	1, 0, -1, 10, 28, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+	1, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
 	-1, -1, -1, -1, -1, -1, 2, 32, -1, -1, -1, -1, -1, -1, -1, 
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, 6, 21, 3, -1, -1, -1, 
+	1, 21, 3, 11, 28, 3, -1, -1, -1, 6, 21, 3, -1, -1, -1, 
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, 6, 1, -1, -1, -1, -1, 
+	1, 21, 5, 11, 28, 3, -1, -1, -1, 6, 1, -1, -1, -1, -1, 
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 8, 8, -1, 
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-	-1, -1, -1, 10, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+	-1, -1, -1, 11, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
 };
 
@@ -229,8 +231,23 @@ Document tinyparse_parse(
         next_state = table[next_index];
         next_commands = table[next_index + 1];
         next_arg = table[next_index + 2];
-        printf("%i -- %s --> %i \t\t{ "BYTE_TO_BINARY_PATTERN" %i }\n", state, 
-            lex->look.type_name, next_state, BYTE_TO_BINARY(next_commands), next_arg);
+
+        printf("%i -- %s --> %i \t\t{ "BYTE_TO_BINARY_PATTERN"( ", state, 
+            lex->look.type_name, next_state, BYTE_TO_BINARY(next_commands));
+        if (next_commands != -1)
+        {
+            if (next_commands & COMMAND_PUSH) printf("push ");
+            if (next_commands & COMMAND_CALL) printf("call ");
+            if (next_commands & COMMAND_RETURN) printf("return ");
+            if (next_commands & COMMAND_PUSH_SUB) printf("push-sub ");
+            if (next_commands & COMMAND_PADDING) printf("padding ");
+            if (next_commands & COMMAND_MARK_TYPE) printf("mark-type ");
+        }
+        else
+        {
+            printf("Not-Accept ");
+        }
+        printf(") %i }\n", next_arg);
 
         // There was a syntax error
         if (next_state == -1)

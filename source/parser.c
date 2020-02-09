@@ -218,23 +218,32 @@ static void link_rule(
     int i, j;
     int to_state, from_state;
     Link link;
+    FSM *to;
 
     // Mark calls
+    rule->being_linked = 1;
     for (i = 0; i < rule->link_count; i++)
     {
         link = rule->links[i];
-        to_state = compiled_rules[link.to_rule].start_index;
+        to = &compiled_rules[link.to_rule];
+        if (!to->has_been_linked && !to->being_linked)
+            link_rule(parser, to, compiled_rules);
+
+        to_state = to->start_index;
 
         // For each state in each link
         for (j = 0; j < link.from_states.count; j++)
         {
-            from_state = link.from_states.states[i]; 
+            from_state = link.from_states.states[i] + rule->start_index;
             LOG(" => Link %i -> %i\n", from_state, to_state);
 
             link_state(parser, rule, from_state, 
                 to_state, link.to_state, link.commands);
         }
     }
+
+    rule->has_been_linked = 1;
+    rule->being_linked = 0;
 }
 
 static void mark_return_paths(
@@ -253,7 +262,11 @@ static void mark_return_paths(
             // If there's a transition pointing to the 
             // ending state, mark as a return path
             if (parser->table[j] == end_state)
+            {
+                LOG(" => Marked return path %i -> %i\n", 
+                   (int)(j / parser->table_width), end_state);
                 parser->table[j + 1] |= COMMAND_RETURN;
+            }
         }
     }
 }
