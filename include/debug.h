@@ -5,16 +5,20 @@
 
 #if DEBUG
 
-#define LOG(...) { debug_prefix(); printf(__VA_ARGS__); }
+#define _LOG(...) { printf(__VA_ARGS__); }
+#define LOG(...) { debug_prefix(); _LOG(__VA_ARGS__); }
 void debug_prefix();
 void debug_start_scope();
 void debug_end_scope();
 
 #else
+
+#define _LOG(...) ;
 #define LOG(...) ;
 void debug_prefix() {}
 void debug_start_scope() {}
 void debug_end_scope() {}
+
 #endif
 
 #endif // DEBUG_H

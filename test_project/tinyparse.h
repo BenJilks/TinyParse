@@ -74,9 +74,8 @@ struct __attribute__((__packed__)) _BlockNode
 			StatementNode *statement;
 			struct __attribute__((__packed__))
 			{
-				StatementNode *mult_block;
+				StatementNode *multi_block;
 			};
-			FunctionNode *func;
 		};
 	};
 };
@@ -98,16 +97,18 @@ struct __attribute__((__packed__)) _StatementNode
 static char table[] = 
 {
 	1, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-	-1, -1, -1, -1, -1, -1, 2, 32, -1, -1, -1, -1, -1, -1, -1, 
-	1, 21, 3, 11, 28, 3, -1, -1, -1, 6, 21, 3, -1, -1, -1, 
+	-1, -1, -1, -1, -1, -1, 2, -128, -1, -1, -1, -1, -1, -1, -1, 
+	-1, -1, -1, 12, 84, 3, -1, -1, -1, 7, 84, 3, -1, -1, -1, 
+	4, 34, -1, 4, 34, -1, 4, 34, -1, 4, 34, -1, 4, 34, -1, 
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-	1, 21, 5, 11, 28, 3, -1, -1, -1, 6, 1, -1, -1, -1, -1, 
+	-1, -1, -1, 12, 84, 1, -1, -1, -1, 7, 4, -1, -1, -1, -1, 
+	10, 34, -1, 10, 34, -1, 10, 34, -1, 10, 34, -1, 10, 34, -1, 
+	-1, -1, -1, 12, 80, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 9, 0, -1, 
+	10, 34, -1, 10, 34, -1, 10, 34, -1, 10, 34, -1, 10, 34, -1, 
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 8, 8, -1, 
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-	-1, -1, -1, 11, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+	-1, -1, -1, 12, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+	13, 34, -1, 13, 34, -1, 13, 34, -1, 13, 34, -1, 13, 34, -1, 
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
 };
 
@@ -128,13 +129,14 @@ static char table[] = {};
 
 #define ALLOCATION_BUFFER 80
 
-#define COMMAND_NOP         0b000000
-#define COMMAND_PUSH        0b100000
-#define COMMAND_CALL        0b010000
-#define COMMAND_RETURN      0b001000
-#define COMMAND_PUSH_SUB    0b000100
-#define COMMAND_PADDING     0b000010
-#define COMMAND_MARK_TYPE   0b000001
+#define COMMAND_NOP         0b00000000
+#define COMMAND_PUSH        0b10000000
+#define COMMAND_CALL        0b01000000
+#define COMMAND_RETURN      0b00100000
+#define COMMAND_PUSH_SUB    0b00010000
+#define COMMAND_PADDING     0b00001000
+#define COMMAND_MARK_TYPE   0b00000100
+#define COMMAND_IGNORE      0b00000010
 
 typedef struct _Allocator
 {
@@ -224,7 +226,7 @@ Document tinyparse_parse(
     alloc = create_allocator();
     value_stack = create_allocator();
 
-    while (!lex->eof_flag)
+    for (;;)
     {
         // Get next state
         next_index = state * TABLE_WIDTH + lex->look.type * STATE_WIDTH;
@@ -232,8 +234,8 @@ Document tinyparse_parse(
         next_commands = table[next_index + 1];
         next_arg = table[next_index + 2];
 
-        printf("%i -- %s --> %i \t\t{ "BYTE_TO_BINARY_PATTERN"( ", state, 
-            lex->look.type_name, next_state, BYTE_TO_BINARY(next_commands));
+        printf("%i -- %s(%i) --> %i \t\t{ "BYTE_TO_BINARY_PATTERN"( ", state, 
+            lex->look.type_name, lex->look.type, next_state, BYTE_TO_BINARY(next_commands));
         if (next_commands != -1)
         {
             if (next_commands & COMMAND_PUSH) printf("push ");
@@ -242,6 +244,7 @@ Document tinyparse_parse(
             if (next_commands & COMMAND_PUSH_SUB) printf("push-sub ");
             if (next_commands & COMMAND_PADDING) printf("padding ");
             if (next_commands & COMMAND_MARK_TYPE) printf("mark-type ");
+            if (next_commands & COMMAND_IGNORE) printf("ignore ");
         }
         else
         {
@@ -259,13 +262,6 @@ Document tinyparse_parse(
             break;
         }
 
-        // Mark type
-        if (next_commands & COMMAND_MARK_TYPE)
-        {
-            printf("Marking type: %s\n", lex->look.type_name);
-            push(&value_stack, (void*)&lex->look.type, sizeof(int));
-        }
-
         // Set next state and run command
         if (next_commands & COMMAND_CALL) 
         {
@@ -279,6 +275,13 @@ Document tinyparse_parse(
             }
 
             call_stack_pointer += 3;
+        }
+
+        // Mark type
+        if (next_commands & COMMAND_MARK_TYPE)
+        {
+            printf("Marking type: %s\n", lex->look.type_name);
+            push(&value_stack, (void*)&lex->look.type, sizeof(int));
         }
 
         // Add padding
@@ -313,8 +316,10 @@ Document tinyparse_parse(
             }
         }
         
+        if (!(next_commands & COMMAND_IGNORE) && !lex->eof_flag)
+            testproject_next(lex);
+        
         state = next_state;
-        testproject_next(lex);
 
         // If a return command has been called in the 
         // outer most scope, this is an accepting state

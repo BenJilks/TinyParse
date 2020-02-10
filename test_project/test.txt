@@ -1,4 +1,3 @@
 
-func test_func
-    func diff
-        test
+func Lolzdwdw 
+    { test }

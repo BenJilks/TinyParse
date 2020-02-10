@@ -203,7 +203,8 @@ static void link_state(
         from_commands = parser->table[to_state * parser->table_width + i + 1];
         if (transition != -1)
         {
-            parser->table[index + i] = transition;
+            LOG("\t -> %s\n", &parser->tokens[(int)(i / STATE_WIDTH) * TOKEN_LEN * 2]);
+            parser->table[index + i + 0] = transition;
             parser->table[index + i + 1] = commands | from_commands;
             parser->table[index + i + 2] = return_state;
         }
@@ -229,12 +230,11 @@ static void link_rule(
         if (!to->has_been_linked && !to->being_linked)
             link_rule(parser, to, compiled_rules);
 
-        to_state = to->start_index;
-
         // For each state in each link
+        to_state = to->start_index;
         for (j = 0; j < link.from_states.count; j++)
         {
-            from_state = link.from_states.states[i] + rule->start_index;
+            from_state = link.from_states.states[j] + rule->start_index;
             LOG(" => Link %i -> %i\n", from_state, to_state);
 
             link_state(parser, rule, from_state, 
@@ -244,31 +244,6 @@ static void link_rule(
 
     rule->has_been_linked = 1;
     rule->being_linked = 0;
-}
-
-static void mark_return_paths(
-    Parser *parser, 
-    FSM *rule)
-{
-    int i, j;
-    int end_state;
-
-    // Mark return paths
-    for (i = 0; i < rule->endings.count; i++)
-    {
-        end_state = rule->endings.states[i] + rule->start_index;
-        for (j = 0; j < parser->table_size * parser->table_width; j += STATE_WIDTH)
-        {
-            // If there's a transition pointing to the 
-            // ending state, mark as a return path
-            if (parser->table[j] == end_state)
-            {
-                LOG(" => Marked return path %i -> %i\n", 
-                   (int)(j / parser->table_width), end_state);
-                parser->table[j + 1] |= COMMAND_RETURN;
-            }
-        }
-    }
 }
 
 static void link_compiled_rules(
@@ -319,10 +294,6 @@ static void link_compiled_rules(
     // Parse links to sub rules
     for (i = 0; i < parser->rule_count; i++)
         link_rule(parser, &compiled_rules[i], compiled_rules);
-
-    // Mark return paths
-    for (i = 0; i < parser->rule_count; i++)
-        mark_return_paths(parser, &compiled_rules[i]);
 }
 
 void parser_compile_and_link(

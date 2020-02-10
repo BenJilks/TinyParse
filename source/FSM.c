@@ -86,7 +86,7 @@ static EndingStates compile_sub_call(
     int i;
     for (i = 0; i < from.count; i++)
     {
-        LOG("%i ==> %s ==> %i \t", from.states[i], 
+        LOG("%i ==> %s ==> %i { ", from.states[i], 
             name, return_state);
     }
 #endif
@@ -108,15 +108,55 @@ static EndingStates compile_sub_call(
     // If the type should be marked, do so
     if (from.mark_type)
     {
-        LOG("mark type, ");
+        _LOG("mark type ");
         link.commands |= COMMAND_MARK_TYPE;
     }
 
     fsm->links[fsm->link_count] = link;
     fsm->link_count += 1;
 
-    LOG("\n");
+    _LOG("}\n");
     return endings;
+}
+
+static void create_transision(
+    FSM *fsm,
+    Parser *parser,
+    int from_state,
+    int branch_size,
+    EndingStates from,
+    int state,
+    int commands,
+    int token_index,
+    const char *token_name)
+{
+    int from_index;
+    int table_index;
+    int padding;
+
+    from_index = from_state * parser->table_width;
+    table_index = from_index + token_index * STATE_WIDTH;
+    fsm->table[table_index] = state;
+    fsm->table[table_index + 1] = commands;
+    LOG("%i --%s--> %i { ", from_state, 
+        token_name, state, padding);
+    
+    // Set the mark type command, if needed
+    if (from.mark_type)
+    {
+        _LOG("mark type ");
+        fsm->table[table_index + 1] |= COMMAND_MARK_TYPE;
+    }
+
+    // Add padding if needed
+    padding = from.total_size - branch_size;
+    if (padding > 0)
+    {
+        _LOG("padding: %i ", padding);
+        fsm->table[table_index + 1] |= COMMAND_PADDING;
+        fsm->table[table_index + 2] = padding;
+    }
+    _LOG("}\n");
 }
 
 static EndingStates compile_match(
@@ -148,32 +188,10 @@ static EndingStates compile_match(
     state = new_state(fsm, parser);
     for (i = 0; i < from.count; i++)
     {
-        int from_index;
-        int table_index;
-        int padding;
-
-        from_index = from.states[i] * parser->table_width;
-        table_index = from_index + token_index * STATE_WIDTH;
-        fsm->table[table_index] = state;
-        fsm->table[table_index + 1] = commands;
-        LOG("%i --%s--> %i \t\t", from.states[i], 
-            token_name, state, padding);
-        
-        if (from.mark_type)
-        {
-            LOG("mark type, ");
-            fsm->table[table_index + 1] |= COMMAND_MARK_TYPE;
-        }
-
-        // Add padding if needed
-        padding = from.total_size - from.branch_size[i];
-        if (padding > 0)
-        {
-            fsm->table[table_index + 1] |= COMMAND_PADDING;
-            fsm->table[table_index + 2] = padding;
-            LOG("padding: %i, ", padding);
-        }
-        LOG("\n");
+        create_transision(fsm, parser, 
+            from.states[i], from.branch_size[i], from,
+            state, commands, 
+            token_index, token_name);
     }
 
     // Make the end this state
@@ -300,12 +318,47 @@ static EndingStates compile_node(
     return endings;
 }
 
+static EndingStates create_ending_transitions(
+    FSM *fsm,
+    Parser *parser,
+    EndingStates from)
+{
+    EndingStates endings;
+    int ending_state;
+    int i, j;
+
+    // Create transisitions to ending state
+    ending_state = new_state(fsm, parser);
+    for (i = 0; i < from.count; i++)
+    {
+        int state_index, token_index;
+        LOG("\t%i --*--> end\n", from.states[i]);
+
+        state_index = from.states[i] * parser->table_width;
+        for (j = 0; j < parser->table_width; j += STATE_WIDTH)
+        {
+            token_index = state_index + j;
+            fsm->table[token_index + 0] = ending_state;
+            fsm->table[token_index + 1] = COMMAND_RETURN | COMMAND_IGNORE;
+            fsm->table[token_index + 2] = -1;
+        }
+    }
+
+    // Create and return ending state
+    endings.count = 1;
+    endings.states[0] = ending_state;
+    endings.branch_size[0] = from.total_size;
+    endings.total_size = from.total_size;
+    endings.mark_type = 0;
+    return endings;
+}
+
 FSM fsm_compile(
     Rule *rule,
     LexerStream *lex,
     Parser *parser)
 {
-    EndingStates from;
+    EndingStates from, endings;
     FSM fsm;
     int start;
     LOG("Compiling rule '%s'\n", rule->name);
@@ -325,8 +378,13 @@ FSM fsm_compile(
     from.mark_type = 0;
 
     // Compile the rule
-    fsm.endings = compile_expression(&fsm, lex, parser, 
+    endings = compile_expression(&fsm, lex, parser, 
         rule->root, from);
+    
+    // Create return transitions 
+    // to the ending state
+    fsm.endings = create_ending_transitions(
+        &fsm, parser, endings);
 
     return fsm;
 }
