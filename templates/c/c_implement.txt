@@ -8,7 +8,7 @@
 #define ENTRY_POINT 0
 #define TABLE_WIDTH 0
 #define testproject_next(...) ;
-static char table[] = {};
+static char parser_table[] = {};
 #endif
 
 
@@ -117,9 +117,9 @@ Document tinyparse_parse(
     {
         // Get next state
         next_index = state * TABLE_WIDTH + lex->look.type * STATE_WIDTH;
-        next_state = table[next_index];
-        next_commands = table[next_index + 1];
-        next_arg = table[next_index + 2];
+        next_state = parser_table[next_index];
+        next_commands = parser_table[next_index + 1];
+        next_arg = parser_table[next_index + 2];
 
         printf("%i -- %s(%i) --> %i \t\t{ "BYTE_TO_BINARY_PATTERN"( ", state, 
             lex->look.type_name, lex->look.type, next_state, BYTE_TO_BINARY(next_commands));

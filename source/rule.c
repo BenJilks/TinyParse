@@ -57,7 +57,8 @@ static RuleNode *parse_node(
 {
     switch (lex->look.type)
     {
-        case TinyParse_Name: return parse_keyword(lex);
+        case TinyParse_Name: 
+        case TinyParse_Symbol: return parse_keyword(lex);
         case TinyParse_OpenNode: return parse_token(rule, lex);
         case TinyParse_Open: return parse_expression(rule, lex);
     }

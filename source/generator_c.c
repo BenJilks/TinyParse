@@ -203,7 +203,7 @@ void generate_implement(
     fprintf(output, "\n#define TABLE_WIDTH %i\n", parser->table_width);
     fprintf(output, "#define ENTRY_POINT %i\n", parser->entry_index);
 
-    fprintf(output, "\nstatic char table[] = \n{\n");
+    fprintf(output, "\nstatic char parser_table[] = \n{\n");
     for (i = 0; i < parser->table_size; i++)
     {
         fprintf(output, "\t");

@@ -94,20 +94,20 @@ struct __attribute__((__packed__)) _StatementNode
 #define TABLE_WIDTH 15
 #define ENTRY_POINT 0
 
-static char table[] = 
+static char parser_table[] = 
 {
-	1, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+	1, 8, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
 	-1, -1, -1, -1, -1, -1, 2, -128, -1, -1, -1, -1, -1, -1, -1, 
-	-1, -1, -1, 12, 84, 3, -1, -1, -1, 7, 84, 3, -1, -1, -1, 
+	-1, -1, -1, 12, 92, 3, -1, -1, -1, 7, 92, 3, -1, -1, -1, 
 	4, 34, -1, 4, 34, -1, 4, 34, -1, 4, 34, -1, 4, 34, -1, 
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-	-1, -1, -1, 12, 84, 1, -1, -1, -1, 7, 4, -1, -1, -1, -1, 
+	-1, -1, -1, 12, 92, 1, -1, -1, -1, 7, 12, 1, -1, -1, -1, 
 	10, 34, -1, 10, 34, -1, 10, 34, -1, 10, 34, -1, 10, 34, -1, 
-	-1, -1, -1, 12, 80, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+	-1, -1, -1, 12, 88, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 9, 0, -1, 
 	10, 34, -1, 10, 34, -1, 10, 34, -1, 10, 34, -1, 10, 34, -1, 
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-	-1, -1, -1, 12, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+	-1, -1, -1, 12, 8, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
 	13, 34, -1, 13, 34, -1, 13, 34, -1, 13, 34, -1, 13, 34, -1, 
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
 };
@@ -121,7 +121,7 @@ static char table[] =
 #define ENTRY_POINT 0
 #define TABLE_WIDTH 0
 #define testproject_next(...) ;
-static char table[] = {};
+static char parser_table[] = {};
 #endif
 
 
@@ -230,9 +230,9 @@ Document tinyparse_parse(
     {
         // Get next state
         next_index = state * TABLE_WIDTH + lex->look.type * STATE_WIDTH;
-        next_state = table[next_index];
-        next_commands = table[next_index + 1];
-        next_arg = table[next_index + 2];
+        next_state = parser_table[next_index];
+        next_commands = parser_table[next_index + 1];
+        next_arg = parser_table[next_index + 2];
 
         printf("%i -- %s(%i) --> %i \t\t{ "BYTE_TO_BINARY_PATTERN"( ", state, 
             lex->look.type_name, lex->look.type, next_state, BYTE_TO_BINARY(next_commands));

@@ -94,7 +94,7 @@ static void parse_define_tokens(
     while (lex->look.type != TinyParse_Close)
     {
         // Parse token data
-        alias_token = tinyparse_match(lex, TinyParse_Name, "Alias");
+        alias_token = tinyparse_next(lex);
         name_token = tinyparse_match(lex, TinyParse_Name, "Name");
 
         // Read data into the token buffer
