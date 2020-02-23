@@ -170,6 +170,7 @@ Rule rule_parse(
     lexer_read_string(lex, name, rule.name);
     LOG("Parsing rule '%s'\n", rule.name);
 
+    rule.name_token = name;
     rule.root = parse_expression(&rule, lex);
     return rule;
 }

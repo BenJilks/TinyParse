@@ -70,7 +70,7 @@ static void generate_label_definition(
     }
 
     lexer_read_string(lex, label, label_name);
-    fprintf(output, label_name);
+    fputs(label_name, output);
     fprintf(output, ";\n");
 }
 
@@ -146,6 +146,8 @@ static void generate_type_expression(
 
         case RULE_OR: generate_type_or(
             output, node, lex, parser, tab); break;
+        
+        default: break;
     }
 
     if (node->next != NULL)
@@ -171,26 +173,75 @@ static void generate_data_types(
     });
 }
 
-static void generate_keyword(
-    FILE *output, 
-    RuleNode *node, 
+static void generate_command_code(
+    FILE *output,
     LexerStream *lex,
     Parser *parser,
-    int indent)
+    Command command)
 {
-    int i;
-    char name[80];
-    Token name_token;
+    char node[80];
+    char attr[80];
+    lexer_read_string(lex, command.node, node);
 
-    name_token = node->value;
-    lexer_read_string(lex, name_token, name);
+    if (command.flags & FLAG_CALL)
+    {
+        int to_state;
 
-    for (i = 0; i < indent + 1; i++)
-        fprintf(output, "\t");
+        to_state = parser->rules[command.to_rule].start_index;
+        fprintf(output, "call_stack[call_stack_pointer++] = state;");
+        fprintf(output, "call_stack[call_stack_pointer++] = value_pointer;");
+        fprintf(output, "state = %i;", to_state);
+        fprintf(output, "value_pointer += sizeof(%sNode);", node);
+        fprintf(output, "ignore_flag = 1;");
+    }
     
-    fprintf(output, "%s_match(%s_%s, \"%s\");\n",
-        parser->project_name, parser->project_name,
-        name, name);
+    if (command.flags & FLAG_SET)
+    {
+        lexer_read_string(lex, command.attr, attr);
+        fprintf(output, "((%sNode*)(value + value_pointer))->%s"
+            " = lex->look;", node, attr);
+    }
+
+    if (command.flags & FLAG_PUSH_SUB)
+    {
+        lexer_read_string(lex, command.attr, attr);
+        fprintf(output, "((%sNode*)(value + value_pointer))->%s = "
+            "push(&alloc, value + value_pointer + sizeof(%sNode), sizeof(%sNode));",
+            node, attr, node,
+            parser->rules[command.to_rule].name); 
+        fprintf(output, "ignore_flag = 1;");
+    }
+
+    if (command.flags & FLAG_RETURN)
+    {
+        fprintf(output, "value_pointer = call_stack[--call_stack_pointer];");
+        fprintf(output, "state = call_stack[--call_stack_pointer];");
+        fprintf(output, "ignore_flag = 1;");
+    }
+}
+
+static void generate_commands(
+    FILE *output,
+    LexerStream *lex,
+    Parser *parser)
+{
+    Command command;
+    int i;
+
+    fprintf(output, "#define EXEC_COMMAND(command) \\\n");
+    fprintf(output, "{ \\\n");
+    fprintf(output, "\tswitch(command) \\\n");
+    fprintf(output, "\t{ \\\n");
+    for (i = 0; i < parser->command_count; i++)
+    {
+        fprintf(output, "\t\tcase %i: ", i);
+        command = parser->commands[i];
+        generate_command_code(output, lex, parser, command);
+
+        fprintf(output, " break; \\\n");
+    }
+    fprintf(output, "\t} \\\n");
+    fprintf(output, "}\n");
 }
 
 void generate_implement(
@@ -208,7 +259,10 @@ void generate_implement(
     {
         fprintf(output, "\t");
         for (j = 0; j < parser->table_width; j++)
-            fprintf(output, "%i, ", parser->table[i * parser->table_width + j]);
+        {
+            fprintf(output, "%i, ", 
+                parser->table[i * parser->table_width + j]);
+        }
         fprintf(output, "\n");
     }
     fprintf(output, "};\n");
@@ -230,6 +284,7 @@ void generate_c(
     fprintf(output, "\n#endif // TINYPARSER_H\n");
 
     fprintf(output, "\n#ifdef TINYPARSE_IMPLEMENT\n");
+    generate_commands(output, lex, parser);
     generate_implement(output, lex, parser);
     fprintf(output, "\n#endif // TINYPARSE_IMPLEMENT\n");
 }

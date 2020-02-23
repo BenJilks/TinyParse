@@ -10,6 +10,8 @@ Parser parser_create()
     parser.rules = malloc(RULE_BUFFER_SIZE * sizeof(Rule));
     parser.rule_buffer_size = RULE_BUFFER_SIZE;
     parser.rule_count = 0;
+    parser.commands = malloc(1);
+    parser.command_count = 0;
 
     // Create token buffer
     parser.token_buffer = TOKEN_BUFFER;
@@ -180,79 +182,13 @@ void parser_parse(
     }
 }
 
-static void link_state(
-    Parser *parser,
-    FSM *rule,
-    int from_state,
-    int to_state,
-    int return_state,
-    int commands)
-{
-    int start, i;
-    int index;
-    char transition;
-    char from_commands;
-    
-    // Copy the transitions from the to state into the from state,
-    // this will make it so it jumps into the sub state
-    start = rule->start_index;
-    index = from_state * parser->table_width;
-    for (i = 0; i < parser->table_width; i += STATE_WIDTH)
-    {
-        transition = parser->table[to_state * parser->table_width + i];
-        from_commands = parser->table[to_state * parser->table_width + i + 1];
-        if (transition != -1)
-        {
-            LOG("\t -> %s\n", &parser->tokens[(int)(i / STATE_WIDTH) * TOKEN_LEN * 2]);
-            parser->table[index + i + 0] = transition;
-            parser->table[index + i + 1] = commands | from_commands;
-            parser->table[index + i + 2] = return_state;
-        }
-    }
-}
-
-static void link_rule(
-    Parser *parser, 
-    FSM *rule,
-    FSM *compiled_rules)
-{
-    int i, j;
-    int to_state, from_state;
-    Link link;
-    FSM *to;
-
-    // Mark calls
-    rule->being_linked = 1;
-    for (i = 0; i < rule->link_count; i++)
-    {
-        link = rule->links[i];
-        to = &compiled_rules[link.to_rule];
-        if (!to->has_been_linked && !to->being_linked)
-            link_rule(parser, to, compiled_rules);
-
-        // For each state in each link
-        to_state = to->start_index;
-        for (j = 0; j < link.from_states.count; j++)
-        {
-            from_state = link.from_states.states[j] + rule->start_index;
-            LOG(" => Link %i -> %i\n", from_state, to_state);
-
-            link_state(parser, rule, from_state, 
-                to_state, link.to_state, link.commands);
-        }
-    }
-
-    rule->has_been_linked = 1;
-    rule->being_linked = 0;
-}
-
 static void link_compiled_rules(
     Parser *parser, 
     FSM *compiled_rules,
     const char *entry_point)
 {
     FSM *rule;
-    int start, to_state;
+    int start;
     int entry_index;
     int i, j;
 
@@ -265,8 +201,18 @@ static void link_compiled_rules(
         if (!strcmp(parser->rules[i].name, entry_point))
             parser->entry_index = parser->table_size;
 
+        // Mark rule positions
+        rule->command_start = parser->command_count;
         rule->start_index = parser->table_size;
+        parser->rules[i].start_index = parser->table_size;
         parser->table_size += rule->count;
+
+        // Add commands to parser
+        parser->command_count += rule->command_count;
+        parser->commands = realloc(parser->commands, 
+            sizeof(Command) * parser->command_count);
+        memcpy(parser->commands + parser->command_count - rule->command_count,
+            rule->commands, sizeof(Command) * rule->command_count);
     }
 
     // Allocate table
@@ -281,19 +227,19 @@ static void link_compiled_rules(
         start = rule->start_index * parser->table_width;
         for (j = 0; j < rule->count * parser->table_width; j += STATE_WIDTH)
         {
-            to_state = rule->table[j];
-            if (to_state != -1)
-                to_state += rule->start_index;
+            int to_state, command;
 
+            // Find new state values
+            to_state = rule->table[j] != -1 ? 
+                rule->table[j] + rule->start_index : -1;
+            command = rule->table[j + 1] != -1 ?
+                rule->table[j + 1] + rule->command_start : -1;
+
+            // Add them to the table
             parser->table[start + j] = to_state;
-            parser->table[start + j + 1] = rule->table[j + 1];
-            parser->table[start + j + 2] = rule->table[j + 2];
+            parser->table[start + j + 1] = command;
         }
     }
-
-    // Parse links to sub rules
-    for (i = 0; i < parser->rule_count; i++)
-        link_rule(parser, &compiled_rules[i], compiled_rules);
 }
 
 void parser_compile_and_link(

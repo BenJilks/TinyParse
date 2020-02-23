@@ -1,6 +1,8 @@
 #include "FSM.h"
 #include "debug.h"
 
+#define COMMAND_BUFFER  80
+
 static int new_state(
     FSM *fsm,
     Parser *parser)
@@ -28,6 +30,32 @@ static int new_state(
     return state;
 }
 
+static Token TK_NULL = { -1 };
+static int new_command(
+    FSM *fsm,
+    int flags, 
+    Token attr)
+{
+    Command command;
+
+    // Create command struct
+    command.flags = flags;
+    command.node = fsm->name;
+    command.attr = attr;
+
+    // Get a new ID and add it to the FSM
+    if (fsm->command_count + 1 >= fsm->command_buffer)
+    {
+        fsm->command_buffer += COMMAND_BUFFER;
+        fsm->commands = realloc(fsm->commands, 
+            sizeof(Command) * fsm->command_buffer);
+    }
+    fsm->commands[fsm->command_count] = command;
+    fsm->command_count += 1;
+
+    return fsm->command_count - 1;
+}
+
 static EndingStates compile_node(
     FSM *fsm,
     LexerStream *lex,
@@ -35,21 +63,45 @@ static EndingStates compile_node(
     RuleNode *node,
     EndingStates from);
 
-static void calculate_branch_size(
-    EndingStates *endings,
-    EndingStates *from,
-    int commands,
-    int element_size)
+static void create_transision(
+    FSM *fsm,
+    Parser *parser,
+    int from_state,
+    EndingStates from,
+    int state,
+    int token_index,
+    int command_id)
 {
-    // This branches size if the last ones' total 
-    // size plus this element size if it's stored
-    endings->branch_size[0] = from->total_size;
-    if (commands & COMMAND_PUSH)
-        endings->branch_size[0] += element_size;
+    int from_index;
+    int table_index;
 
-    // As there's only one branch, the total size 
-    // is the branch size
-    endings->total_size = endings->branch_size[0];
+    from_index = from_state * parser->table_width;
+    table_index = from_index + token_index * STATE_WIDTH;
+    fsm->table[table_index] = state;
+    fsm->table[table_index + 1] = command_id;
+}
+
+static void create_all_transition(
+    FSM *fsm,
+    Parser *parser,
+    int to_state,
+    int command_id,
+    EndingStates from)
+{
+    int i, j;
+
+    for (i = 0; i < from.count; i++)
+    {
+        int from_state;
+
+        from_state = from.states[i];
+        for (j = 0; j < parser->table_width; j++)
+        {
+            create_transision(fsm, parser, 
+                from_state, from, to_state, 
+                j, command_id);
+        }
+    }
 }
 
 static EndingStates compile_sub_call(
@@ -57,13 +109,20 @@ static EndingStates compile_sub_call(
     LexerStream *lex,    
     Parser *parser,
     Token token,
+    Token label,
+    int should_push,
     const char *name,
-    int commands,
     EndingStates from)
 {
     EndingStates endings;
     int rule_index;
     int return_state;
+    int i, j;
+    int command_id;
+
+    return_state = new_state(fsm, parser);
+    endings.count = 1;
+    endings.states[0] = return_state;
 
     // Find the rules' index
     rule_index = parser_find_rule_index(parser, name);
@@ -74,89 +133,33 @@ static EndingStates compile_sub_call(
         return endings;
     }
 
-    // Create return state
-    calculate_branch_size(&endings, &from, 
-        commands, sizeof(void*));
-    return_state = new_state(fsm, parser);
-    endings.states[0] = return_state;
-    endings.count = 1;
-    endings.mark_type = 0;
+    // Create call command
+    command_id = new_command(fsm, FLAG_CALL, TK_NULL);
+    fsm->commands[command_id].to_rule = rule_index;
+
+    // Create transitions
+    create_all_transition(fsm, parser, return_state, command_id, from);
+    if (should_push)
+    {
+        int push_command_id;
+        int push_state;
+
+        push_command_id = new_command(fsm, FLAG_PUSH_SUB, label);
+        push_state = new_state(fsm, parser);
+        fsm->commands[push_command_id].to_rule = rule_index;
+        create_all_transition(fsm, parser, push_state, push_command_id, endings);
+        endings.states[0] = push_state;
+    }
 
 #if DEBUG
-    int i;
     for (i = 0; i < from.count; i++)
     {
-        LOG("%i ==> %s ==> %i { ", from.states[i], 
-            name, return_state);
+        LOG("%i ==> %s ==> %i\n", from.states[i], 
+            name, endings.states[0]);
     }
 #endif
 
-    // Create linking data to be linked later
-    Link link;
-    link.from_states = from;
-    link.to_state = return_state;
-    link.to_rule = rule_index;
-    link.commands = commands | COMMAND_CALL;
-
-    // If there's a push command, make it into a push sub
-    if (link.commands & COMMAND_PUSH)
-    {
-        link.commands ^= COMMAND_PUSH;
-        link.commands |= COMMAND_PUSH_SUB;
-    }
-
-    // If the type should be marked, do so
-    if (from.mark_type)
-    {
-        _LOG("mark type ");
-        link.commands |= COMMAND_MARK_TYPE;
-    }
-
-    fsm->links[fsm->link_count] = link;
-    fsm->link_count += 1;
-
-    _LOG("}\n");
     return endings;
-}
-
-static void create_transision(
-    FSM *fsm,
-    Parser *parser,
-    int from_state,
-    int branch_size,
-    EndingStates from,
-    int state,
-    int commands,
-    int token_index,
-    const char *token_name)
-{
-    int from_index;
-    int table_index;
-    int padding;
-
-    from_index = from_state * parser->table_width;
-    table_index = from_index + token_index * STATE_WIDTH;
-    fsm->table[table_index] = state;
-    fsm->table[table_index + 1] = commands;
-    LOG("%i --%s--> %i { ", from_state, 
-        token_name, state, padding);
-    
-    // Set the mark type command, if needed
-    if (from.mark_type)
-    {
-        _LOG("mark type ");
-        fsm->table[table_index + 1] |= COMMAND_MARK_TYPE;
-    }
-
-    // Add padding if needed
-    padding = from.total_size - branch_size;
-    if (padding > 0)
-    {
-        _LOG("padding: %i ", padding);
-        fsm->table[table_index + 1] |= COMMAND_PADDING;
-        fsm->table[table_index + 2] = padding;
-    }
-    _LOG("}\n");
 }
 
 static EndingStates compile_match(
@@ -164,13 +167,15 @@ static EndingStates compile_match(
     LexerStream *lex,    
     Parser *parser,
     Token alias,
-    int commands,
+    Token label,
+    int should_push,
     EndingStates from)
 {
     EndingStates endings;
     int state, i;
     int token_index;
     char token_name[80];
+    int command_id;
 
     // Find the token index from the name
     lexer_read_string(lex, alias, token_name);
@@ -180,8 +185,13 @@ static EndingStates compile_match(
         // If the token was not found, assume it's 
         // a sub rule call
         return compile_sub_call(fsm, lex, parser, 
-            alias, token_name, commands, from);
+            alias, label, should_push, token_name, from);
     }
+
+    // Create a push command if needed
+    command_id = -1;
+    if (should_push)
+        command_id = new_command(fsm, FLAG_SET, label);
 
     // Create a new state and make the 
     // transitions to it
@@ -189,17 +199,16 @@ static EndingStates compile_match(
     for (i = 0; i < from.count; i++)
     {
         create_transision(fsm, parser, 
-            from.states[i], from.branch_size[i], from,
-            state, commands, 
-            token_index, token_name);
+            from.states[i], from, state, 
+            token_index, command_id);
+
+        LOG("%i --%s--> %i\n", from.states[i], 
+            token_name, state);
     }
 
     // Make the end this state
-    calculate_branch_size(&endings, &from, 
-        commands, sizeof(Token));
     endings.states[0] = state;
     endings.count = 1;
-    endings.mark_type = 0;
     return endings;
 }
 
@@ -211,7 +220,7 @@ static EndingStates compile_keyword(
     EndingStates from)
 {
     return compile_match(fsm, lex, parser, 
-        node->value, COMMAND_NOP, from);
+        node->value, node->label, 0, from);
 }
 
 static EndingStates compile_value(
@@ -222,7 +231,7 @@ static EndingStates compile_value(
     EndingStates from)
 {
     return compile_match(fsm, lex, parser, 
-        node->value, COMMAND_PUSH, from);
+        node->value, node->label, 1, from);
 }
 
 #define MAX(a, b) (a) > (b) ? (a) : (b)
@@ -242,13 +251,6 @@ static EndingStates compile_or(
 
     // Set up ending data
     endings.count = 0;
-    endings.mark_type = 0;
-    endings.total_size = 0;
-
-    // If the statement has a label, 
-    // mark its type
-    if (node->has_label)
-        from.mark_type = 1;
 
     curr = node->child;
     while (curr != NULL)
@@ -261,12 +263,10 @@ static EndingStates compile_or(
         for (i = 0; i < branch.count; i++)
         {
             endings.states[endings.count] = branch.states[i];
-            endings.branch_size[endings.count] = branch.branch_size[i];
             endings.count += 1;
         }
 
         // Increment total size and move to the next branch
-        endings.total_size = MAX(endings.total_size, branch.total_size);
         curr = curr->next;
     }
 
@@ -326,9 +326,11 @@ static EndingStates create_ending_transitions(
     EndingStates endings;
     int ending_state;
     int i, j;
+    int command_id;
 
     // Create transisitions to ending state
     ending_state = new_state(fsm, parser);
+    command_id = new_command(fsm, FLAG_RETURN, TK_NULL);
     for (i = 0; i < from.count; i++)
     {
         int state_index, token_index;
@@ -339,17 +341,13 @@ static EndingStates create_ending_transitions(
         {
             token_index = state_index + j;
             fsm->table[token_index + 0] = ending_state;
-            fsm->table[token_index + 1] = COMMAND_RETURN | COMMAND_IGNORE;
-            fsm->table[token_index + 2] = -1;
+            fsm->table[token_index + 1] = command_id;
         }
     }
 
     // Create and return ending state
     endings.count = 1;
     endings.states[0] = ending_state;
-    endings.branch_size[0] = from.total_size;
-    endings.total_size = from.total_size;
-    endings.mark_type = 0;
     return endings;
 }
 
@@ -364,18 +362,21 @@ FSM fsm_compile(
     LOG("Compiling rule '%s'\n", rule->name);
 
     // Create the new FSM
+    fsm.name = rule->name_token;
     fsm.count = 0;
     fsm.buffer_count = 0;
-    fsm.link_count = 0;
-    fsm.has_been_linked = 0;
-    fsm.being_linked = 0;
     fsm.table = malloc(1);
+
+    // Allocate command table
+    fsm.command_buffer = COMMAND_BUFFER;
+    fsm.command_count = 0;
+    fsm.commands = malloc(sizeof(Command) 
+        * fsm.command_buffer);
 
     // Create a starting state
     start = new_state(&fsm, parser);
     from.states[0] = start;
     from.count = 1;
-    from.mark_type = 0;
 
     // Compile the rule
     endings = compile_expression(&fsm, lex, parser, 
@@ -387,4 +388,11 @@ FSM fsm_compile(
         &fsm, parser, endings);
 
     return fsm;
+}
+
+void fsm_free(
+    FSM *fsm)
+{
+    free(fsm->table);
+    free(fsm->commands);
 }

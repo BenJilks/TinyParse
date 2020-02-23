@@ -22,6 +22,10 @@ typedef struct _Parser
     int token_buffer;
     int token_count;
 
+    // Commands
+    Command *commands;
+    int command_count;
+
     // Compiled table data
     char *table;
     int table_width;

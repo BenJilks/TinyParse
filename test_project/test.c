@@ -14,6 +14,10 @@ int main()
     testproject_init(&lex);
     doc = tinyparse_parse(&lex);
 
+    FunctionNode *func;
+    func = (FunctionNode*)doc.root;
+    printf("%s\n", func->test->test.type_name);
+
     tinyparse_free_document(&doc);
     lexer_stream_close(&lex);
 }

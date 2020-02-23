@@ -1,3 +1,2 @@
 
-func Lolzdwdw 
-    { test }
+func test

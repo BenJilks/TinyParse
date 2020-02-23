@@ -11,19 +11,8 @@
 static char parser_table[] = {};
 #endif
 
-
-#define STATE_WIDTH 3
-
+#define STATE_WIDTH 2
 #define ALLOCATION_BUFFER 80
-
-#define COMMAND_NOP         0b00000000
-#define COMMAND_PUSH        0b10000000
-#define COMMAND_CALL        0b01000000
-#define COMMAND_RETURN      0b00100000
-#define COMMAND_PUSH_SUB    0b00010000
-#define COMMAND_PADDING     0b00001000
-#define COMMAND_MARK_TYPE   0b00000100
-#define COMMAND_IGNORE      0b00000010
 
 typedef struct _Allocator
 {
@@ -79,39 +68,29 @@ static void free_allocator(
     free(alloc->memory);
 }
 
-#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
-#define BYTE_TO_BINARY(byte)  \
-  (byte & 0x80 ? '1' : '0'), \
-  (byte & 0x40 ? '1' : '0'), \
-  (byte & 0x20 ? '1' : '0'), \
-  (byte & 0x10 ? '1' : '0'), \
-  (byte & 0x08 ? '1' : '0'), \
-  (byte & 0x04 ? '1' : '0'), \
-  (byte & 0x02 ? '1' : '0'), \
-  (byte & 0x01 ? '1' : '0') 
-
 Document tinyparse_parse(
     LexerStream *lex)
 {
     // State
     int state;
     int next_state, next_commands;
-    int next_arg, next_index;
+    int next_index;
     int call_command, value_stack_pointer;
+    int ignore_flag;
 
     // Stacks
-    Allocator alloc, value_stack;
+    Allocator alloc;
     int call_stack[80];
     int call_stack_pointer;
-    void *value;
+    char value[80];
+    int value_pointer;
 
     state = ENTRY_POINT;
-    call_stack_pointer = 3;
+    call_stack_pointer = 2;
     call_stack[0] = 0;              // Return state
-    call_stack[1] = COMMAND_PUSH;   // Command on return
-    call_stack[2] = 0;              // Value stack pointer
+    call_stack[1] = 0;              // Value pointer
     alloc = create_allocator();
-    value_stack = create_allocator();
+    value_pointer = 0;
 
     for (;;)
     {
@@ -119,25 +98,9 @@ Document tinyparse_parse(
         next_index = state * TABLE_WIDTH + lex->look.type * STATE_WIDTH;
         next_state = parser_table[next_index];
         next_commands = parser_table[next_index + 1];
-        next_arg = parser_table[next_index + 2];
 
-        printf("%i -- %s(%i) --> %i \t\t{ "BYTE_TO_BINARY_PATTERN"( ", state, 
-            lex->look.type_name, lex->look.type, next_state, BYTE_TO_BINARY(next_commands));
-        if (next_commands != -1)
-        {
-            if (next_commands & COMMAND_PUSH) printf("push ");
-            if (next_commands & COMMAND_CALL) printf("call ");
-            if (next_commands & COMMAND_RETURN) printf("return ");
-            if (next_commands & COMMAND_PUSH_SUB) printf("push-sub ");
-            if (next_commands & COMMAND_PADDING) printf("padding ");
-            if (next_commands & COMMAND_MARK_TYPE) printf("mark-type ");
-            if (next_commands & COMMAND_IGNORE) printf("ignore ");
-        }
-        else
-        {
-            printf("Not-Accept ");
-        }
-        printf(") %i }\n", next_arg);
+        printf("%i -- %s(%i) --> %i (%i)\n", state, 
+            lex->look.type_name, lex->look.type, next_state, next_commands);
 
         // There was a syntax error
         if (next_state == -1)
@@ -149,73 +112,18 @@ Document tinyparse_parse(
             break;
         }
 
-        // Set next state and run command
-        if (next_commands & COMMAND_CALL) 
-        {
-            call_stack[call_stack_pointer] = next_arg;
-            call_stack[call_stack_pointer + 1] = 0;
-            call_stack[call_stack_pointer + 2] = value_stack.memory_pointer;
-            if (next_commands & COMMAND_PUSH_SUB)
-            {
-                printf("Push sub node %s\n", lex->look.type_name);
-                call_stack[call_stack_pointer + 1] |= COMMAND_PUSH;
-            }
-
-            call_stack_pointer += 3;
-        }
-
-        // Mark type
-        if (next_commands & COMMAND_MARK_TYPE)
-        {
-            printf("Marking type: %s\n", lex->look.type_name);
-            push(&value_stack, (void*)&lex->look.type, sizeof(int));
-        }
-
-        // Add padding
-        if (next_commands & COMMAND_PADDING)
-        {
-            printf("Add padding: %i\n", next_arg);
-            check_buffer_size(&value_stack, next_arg);
-            value_stack.memory_pointer += next_arg;
-        }
-
-        if (next_commands & COMMAND_PUSH) 
-        {
-            printf("Push %s\n", lex->look.type_name);
-            push(&value_stack, (void*)&lex->look, sizeof(Token));
-        }
-
-        if (next_commands & COMMAND_RETURN) 
-        {
-            value_stack_pointer = call_stack[--call_stack_pointer];
-            call_command = call_stack[--call_stack_pointer];
-            next_state = call_stack[--call_stack_pointer];
-            if (call_command & COMMAND_PUSH)
-            {
-                printf("Push sub node now of size %i\n", value_stack.memory_pointer - 
-                    value_stack_pointer);
-
-                value = push(&alloc, value_stack.memory + 
-                    value_stack_pointer, value_stack.memory_pointer - 
-                    value_stack_pointer);
-                value_stack.memory_pointer = value_stack_pointer;
-                push(&value_stack, &value, sizeof(void*));
-            }
-        }
-        
-        if (!(next_commands & COMMAND_IGNORE) && !lex->eof_flag)
-            testproject_next(lex);
-        
+        // Execute command and go to the next state
+        ignore_flag = 0;
         state = next_state;
+        EXEC_COMMAND(next_commands);
+        if (!ignore_flag) testproject_next(lex);
 
         // If a return command has been called in the 
         // outer most scope, this is an accepting state
         if (call_stack_pointer <= 0)
             break;
     }
-
     printf("Accepted!!!\n");
-    free_allocator(&value_stack);
 
     Document doc;
     doc.memory = alloc.memory;
