@@ -1,2 +1,5 @@
 
-func test
+func test_func
+{
+    test
+}

@@ -11,10 +11,16 @@ define tokens
 
 Function 
 ( 
-    < func : func > < Statement : test >
+    func < Name : name >
+        < Block : block >
 )
 
-Statement
+Block
 (
-    < test : test >
+    < Statement : statement >
+    | ( { < MultiBlock : multi_block > } )
+    : type
 )
+
+MultiBlock  ( < Statement : statement > < MultiBlock : next >? )
+Statement   ( < test : test > )

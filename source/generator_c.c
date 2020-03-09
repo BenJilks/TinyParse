@@ -122,7 +122,7 @@ static void generate_type_sub_expression(
     Parser *parser,
     int tab)
 {
-    OUT(output, tab, "struct __attribute__((__packed__))\n");
+    OUT(output, tab, "struct \n");
     OUT(output, tab, "{\n");
     generate_type_expression(output, node->child, 
         lex, parser, tab + 1);
@@ -147,6 +147,9 @@ static void generate_type_expression(
         case RULE_OR: generate_type_or(
             output, node, lex, parser, tab); break;
         
+        case RULE_OPTIONAL: generate_type_expression(
+            output, node->child, lex, parser, tab); break;
+
         default: break;
     }
 
@@ -167,7 +170,7 @@ static void generate_data_types(
     FOR_EACH_RULE(rule, name,
     {
         root = rule.root;
-        fprintf(output, "\nstruct __attribute__((__packed__)) _%sNode\n{\n", name);
+        fprintf(output, "\nstruct _%sNode\n{\n", name);
         generate_type_expression(output, root, lex, parser, 1);
         fprintf(output, "};\n");
     });
@@ -183,6 +186,21 @@ static void generate_command_code(
     char attr[80];
     lexer_read_string(lex, command.node, node);
 
+    if (command.flags & FLAG_MARK_TYPE)
+    {
+        lexer_read_string(lex, command.attr, attr);
+        fprintf(output, "((%sNode*)(value + value_pointer))->%s "
+            "= lex->look.type;", node, attr);
+        fprintf(output, "ignore_flag = 1;");
+
+        fprintf(output, "printf(\"Mark type, \");");
+    }
+
+    if (command.flags & FLAG_NULL)
+    {
+        fprintf(output, "ignore_flag = 1;");
+    }
+
     if (command.flags & FLAG_CALL)
     {
         int to_state;
@@ -193,6 +211,9 @@ static void generate_command_code(
         fprintf(output, "state = %i;", to_state);
         fprintf(output, "value_pointer += sizeof(%sNode);", node);
         fprintf(output, "ignore_flag = 1;");
+
+        fprintf(output, "printf(\"Call %s, \");", 
+            parser->rules[command.to_rule].name);
     }
     
     if (command.flags & FLAG_SET)
@@ -217,6 +238,8 @@ static void generate_command_code(
         fprintf(output, "value_pointer = call_stack[--call_stack_pointer];");
         fprintf(output, "state = call_stack[--call_stack_pointer];");
         fprintf(output, "ignore_flag = 1;");
+
+        fputs("printf(\"Return to: %i, \", state);", output);
     }
 }
 

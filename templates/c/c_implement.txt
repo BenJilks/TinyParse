@@ -57,7 +57,7 @@ static void *push(
 
     // Find the next space to allocate
     alloc->memory_pointer += size;
-    printf("Alloc: %i\n", size);
+    printf("Alloc: %i, ", size);
 
     return ptr;
 }
@@ -99,7 +99,7 @@ Document tinyparse_parse(
         next_state = parser_table[next_index];
         next_commands = parser_table[next_index + 1];
 
-        printf("%i -- %s(%i) --> %i (%i)\n", state, 
+        printf("%i -- %s(%i) --> %i ( %i ", state, 
             lex->look.type_name, lex->look.type, next_state, next_commands);
 
         // There was a syntax error
@@ -117,6 +117,8 @@ Document tinyparse_parse(
         state = next_state;
         EXEC_COMMAND(next_commands);
         if (!ignore_flag) testproject_next(lex);
+        else printf("ignore ");
+        printf(")\n");
 
         // If a return command has been called in the 
         // outer most scope, this is an accepting state

@@ -13,6 +13,14 @@ typedef struct _EndingStates
     int count;
 } EndingStates;
 
+typedef struct _Link
+{
+    EndingStates from;
+    int to_rule;
+    int return_state;
+    int command_id;
+} Link;
+
 typedef struct _FSM
 {
     // Table data
@@ -28,6 +36,10 @@ typedef struct _FSM
     int command_start;
 
     // Linking data
+    Link *links;
+    int link_count;
+    int link_buffer;
+    int has_been_linked;
     int start_index;
 } FSM;
 

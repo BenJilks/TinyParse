@@ -16,7 +16,7 @@ int main()
 
     FunctionNode *func;
     func = (FunctionNode*)doc.root;
-    printf("%s\n", func->test->test.type_name);
+//    printf("%s\n", type_names[func->block->type]);
 
     tinyparse_free_document(&doc);
     lexer_stream_close(&lex);

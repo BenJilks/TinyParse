@@ -182,7 +182,81 @@ void parser_parse(
     }
 }
 
+static void link_rule(
+    LexerStream *lex,
+    Parser *parser,
+    FSM *compiled_rules,
+    FSM *rule);
+
+static void link_sub_call(
+    LexerStream *lex,
+    Parser *parser,
+    FSM *compiled_rules,
+    FSM *from_rule,
+    Link link)
+{
+    FSM *to_rule;
+    int i, j;
+    int to;
+
+    to_rule = &compiled_rules[link.to_rule];
+    to = to_rule->start_index;
+    link_rule(lex, parser, compiled_rules, to_rule);
+    for (i = 0; i < link.from.count; i++)
+    {
+        int from;
+        int to_index, from_index;
+
+        // Find all the transitions where the sub call 
+        // links to something and add a link
+        from = link.from.states[i] + from_rule->start_index;
+        from_index = from * parser->table_width;
+        to_index = to * parser->table_width;
+        for (j = 0; j < parser->table_width; j += STATE_WIDTH)
+        {
+            int transition;
+
+            transition = parser->table[to_index + j];
+            if (transition != -1)
+            {
+                parser->table[from_index + j] = 
+                    link.return_state + from_rule->start_index;
+                parser->table[from_index + j + 1] = 
+                    link.command_id + from_rule->command_start;
+            }
+        }
+
+        LOG("\t=> %i -> %i\n", from, to);
+    }
+}
+
+static void link_rule(
+    LexerStream *lex,
+    Parser *parser,
+    FSM *compiled_rules,
+    FSM *rule)
+{
+    int i;
+
+    // Make sure we don't link a rule 
+    // more then once
+    if (rule->has_been_linked)
+        return;
+    rule->has_been_linked = 1;
+
+    char name[80];
+    lexer_read_string(lex, rule->name, name);
+    printf("Linking rule %s\n", name);
+
+    for (i = 0; i < rule->link_count; i++)
+    {
+        link_sub_call(lex, parser, compiled_rules, 
+            rule, rule->links[i]);
+    }
+}
+
 static void link_compiled_rules(
+    LexerStream *lex,
     Parser *parser, 
     FSM *compiled_rules,
     const char *entry_point)
@@ -240,6 +314,10 @@ static void link_compiled_rules(
             parser->table[start + j + 1] = command;
         }
     }
+
+    // Link sub calls
+    for (i = 0; i < parser->rule_count; i++)
+        link_rule(lex, parser, compiled_rules, &compiled_rules[i]);
 }
 
 void parser_compile_and_link(
@@ -263,7 +341,7 @@ void parser_compile_and_link(
     }
 
     // Link and free
-    link_compiled_rules(parser, 
+    link_compiled_rules(lex, parser, 
         compiled_rules, entry_point);
     
     free(compiled_rules);

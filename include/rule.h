@@ -3,11 +3,13 @@
 
 #include "tinylex.h"
 
-#define FLAG_NOP        0b0000
-#define FLAG_SET        0b0001
-#define FLAG_PUSH_SUB   0b0010
-#define FLAG_CALL       0b0100
-#define FLAG_RETURN     0b1000
+#define FLAG_NOP        0b000000
+#define FLAG_SET        0b000001
+#define FLAG_PUSH_SUB   0b000010
+#define FLAG_CALL       0b000100
+#define FLAG_RETURN     0b001000
+#define FLAG_MARK_TYPE  0b010000
+#define FLAG_NULL       0b100000
 
 typedef struct _Command
 {
@@ -22,7 +24,8 @@ typedef enum _RuleType
     RULE_KEYWORD,
     RULE_VALUE,
     RULE_EXPRESSION,
-    RULE_OR
+    RULE_OR,
+    RULE_OPTIONAL
 } RuleType;
 
 typedef struct _RuleNode

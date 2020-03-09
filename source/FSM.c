@@ -2,6 +2,7 @@
 #include "debug.h"
 
 #define COMMAND_BUFFER  80
+#define LINK_BUFFER     80
 
 static int new_state(
     FSM *fsm,
@@ -104,9 +105,35 @@ static void create_all_transition(
     }
 }
 
+static void create_link(
+    FSM *fsm,
+    int to_rule,
+    int return_state,
+    int command_id,
+    EndingStates from)
+{
+    Link link;
+
+    // Create link
+    link.to_rule = to_rule;
+    link.return_state = return_state;
+    link.command_id = command_id;
+    link.from = from;
+    
+    // Add link to state machine
+    fsm->links[fsm->link_count] = link;
+    fsm->link_count += 1;
+    if (fsm->link_count >= fsm->link_buffer)
+    {
+        fsm->link_buffer += LINK_BUFFER;
+        fsm->links = realloc(fsm->links, 
+            sizeof(Link) * fsm->link_buffer);
+    }
+}
+
 static EndingStates compile_sub_call(
     FSM *fsm,
-    LexerStream *lex,    
+    LexerStream *lex,
     Parser *parser,
     Token token,
     Token label,
@@ -138,7 +165,7 @@ static EndingStates compile_sub_call(
     fsm->commands[command_id].to_rule = rule_index;
 
     // Create transitions
-    create_all_transition(fsm, parser, return_state, command_id, from);
+    create_link(fsm, rule_index, return_state, command_id, from);
     if (should_push)
     {
         int push_command_id;
@@ -236,6 +263,31 @@ static EndingStates compile_value(
 
 #define MAX(a, b) (a) > (b) ? (a) : (b)
 
+static EndingStates mark_type(
+    FSM *fsm,
+    Parser *parser,
+    Token label,
+    EndingStates from)
+{
+    int command_id;
+    int type_state;
+    EndingStates endings;
+
+    // Create command and state
+    command_id = new_command(fsm, 
+        FLAG_MARK_TYPE, label);
+    type_state = new_state(fsm, parser);
+
+    // Create transitions
+    create_all_transition(fsm, parser, 
+        type_state, command_id, from);
+    
+    // Make from this new state
+    endings.count = 1;
+    endings.states[0] = type_state;
+    return endings;
+}
+
 static EndingStates compile_or(
     FSM *fsm,
     LexerStream *lex,
@@ -248,6 +300,11 @@ static EndingStates compile_or(
 
     LOG("If =>\n");
     debug_start_scope();
+
+    // If there's a type label, create 
+    // a command node to mark the type
+    if (node->has_label)
+        from = mark_type(fsm, parser, node->label, from);
 
     // Set up ending data
     endings.count = 0;
@@ -271,6 +328,32 @@ static EndingStates compile_or(
     }
 
     debug_end_scope();
+    return endings;
+}
+
+static EndingStates compile_optional(
+    FSM *fsm,
+    LexerStream *lex,
+    Parser *parser,
+    RuleNode *node,
+    EndingStates from)
+{
+    EndingStates endings;
+    int i, null_state;
+    int null_command;
+
+    // Create default null transitions
+    null_state = new_state(fsm, parser);
+    null_command = new_command(fsm, FLAG_NULL, TK_NULL);
+//    create_all_transition(fsm, parser, null_state, null_command, from);
+
+    // Overwrite transition for valid ones
+    endings = compile_node(fsm, lex, 
+        parser, node->child, from);
+
+    // Add null state to endings
+//    endings.states[endings.count] = null_state;
+//    endings.count += 1;
     return endings;
 }
 
@@ -307,6 +390,7 @@ static EndingStates compile_node(
         case RULE_KEYWORD: endings = compile_keyword(fsm, lex, parser, node, from); break;
         case RULE_VALUE: endings = compile_value(fsm, lex, parser, node, from); break;
         case RULE_OR: endings = compile_or(fsm, lex, parser, node, from); break;
+        case RULE_OPTIONAL: endings = compile_optional(fsm, lex, parser, node, from); break;
         case RULE_EXPRESSION: 
             LOG("Expression => \n");
             debug_start_scope();
@@ -373,6 +457,12 @@ FSM fsm_compile(
     fsm.commands = malloc(sizeof(Command) 
         * fsm.command_buffer);
 
+    // Allocate link table
+    fsm.link_buffer = 80;
+    fsm.links = malloc(sizeof(Link) * fsm.link_buffer);
+    fsm.link_count = 0;
+    fsm.has_been_linked = 0;
+
     // Create a starting state
     start = new_state(&fsm, parser);
     from.states[0] = start;
@@ -395,4 +485,5 @@ void fsm_free(
 {
     free(fsm->table);
     free(fsm->commands);
+    free(fsm->links);
 }

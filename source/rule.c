@@ -101,6 +101,22 @@ static RuleNode *parse_or(
     return node;
 }
 
+static RuleNode *parse_optional(
+    Rule *rule,
+    LexerStream *lex,
+    RuleNode *left)
+{
+    RuleNode *node;
+
+    tinyparse_match(lex, TinyParse_Optional, "?");
+    node = malloc(sizeof(RuleNode));
+    node->next = NULL;
+    node->child = left;
+    node->has_label = 0;
+    node->type = RULE_OPTIONAL;
+    return node;
+}
+
 static RuleNode *parse_term(
     Rule *rule,
     LexerStream *lex)
@@ -111,6 +127,7 @@ static RuleNode *parse_term(
     switch (lex->look.type)
     {
         case TinyParse_Or: return parse_or(rule, lex, node);
+        case TinyParse_Optional: return parse_optional(rule, lex, node);
         default: return node;
     }
 }

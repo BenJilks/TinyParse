@@ -52,20 +52,47 @@ void tinyparse_free_document(Document *doc);
 #define TINYPARSER_H
 
 typedef struct _FunctionNode FunctionNode;
+typedef struct _BlockNode BlockNode;
+typedef struct _MultiBlockNode MultiBlockNode;
 typedef struct _StatementNode StatementNode;
 
-struct __attribute__((__packed__)) _FunctionNode
+struct _FunctionNode
 {
-	struct __attribute__((__packed__))
+	struct 
 	{
-		Token func;
-		StatementNode *test;
+		Token name;
+		BlockNode *block;
 	};
 };
 
-struct __attribute__((__packed__)) _StatementNode
+struct _BlockNode
 {
-	struct __attribute__((__packed__))
+	struct 
+	{
+		int type;
+		union
+		{
+			StatementNode *statement;
+			struct 
+			{
+				MultiBlockNode *multi_block;
+			};
+		};
+	};
+};
+
+struct _MultiBlockNode
+{
+	struct 
+	{
+		StatementNode *statement;
+		MultiBlockNode *next;
+	};
+};
+
+struct _StatementNode
+{
+	struct 
 	{
 		Token test;
 	};
@@ -78,12 +105,24 @@ struct __attribute__((__packed__)) _StatementNode
 { \
 	switch(command) \
 	{ \
-		case 0: ((FunctionNode*)(value + value_pointer))->func = lex->look; break; \
-		case 1: call_stack[call_stack_pointer++] = state;call_stack[call_stack_pointer++] = value_pointer;state = 5;value_pointer += sizeof(FunctionNode);ignore_flag = 1; break; \
-		case 2: ((FunctionNode*)(value + value_pointer))->test = push(&alloc, value + value_pointer + sizeof(FunctionNode), sizeof(StatementNode));ignore_flag = 1; break; \
-		case 3: value_pointer = call_stack[--call_stack_pointer];state = call_stack[--call_stack_pointer];ignore_flag = 1; break; \
-		case 4: ((StatementNode*)(value + value_pointer))->test = lex->look; break; \
-		case 5: value_pointer = call_stack[--call_stack_pointer];state = call_stack[--call_stack_pointer];ignore_flag = 1; break; \
+		case 0: ((FunctionNode*)(value + value_pointer))->name = lex->look; break; \
+		case 1: call_stack[call_stack_pointer++] = state;call_stack[call_stack_pointer++] = value_pointer;state = 6;value_pointer += sizeof(FunctionNode);ignore_flag = 1;printf("Call Block, "); break; \
+		case 2: ((FunctionNode*)(value + value_pointer))->block = push(&alloc, value + value_pointer + sizeof(FunctionNode), sizeof(BlockNode));ignore_flag = 1; break; \
+		case 3: value_pointer = call_stack[--call_stack_pointer];state = call_stack[--call_stack_pointer];ignore_flag = 1;printf("Return to: %i, ", state); break; \
+		case 4: ((BlockNode*)(value + value_pointer))->type = lex->look.type;ignore_flag = 1;printf("Mark type, "); break; \
+		case 5: call_stack[call_stack_pointer++] = state;call_stack[call_stack_pointer++] = value_pointer;state = 22;value_pointer += sizeof(BlockNode);ignore_flag = 1;printf("Call Statement, "); break; \
+		case 6: ((BlockNode*)(value + value_pointer))->statement = push(&alloc, value + value_pointer + sizeof(BlockNode), sizeof(StatementNode));ignore_flag = 1; break; \
+		case 7: call_stack[call_stack_pointer++] = state;call_stack[call_stack_pointer++] = value_pointer;state = 15;value_pointer += sizeof(BlockNode);ignore_flag = 1;printf("Call MultiBlock, "); break; \
+		case 8: ((BlockNode*)(value + value_pointer))->multi_block = push(&alloc, value + value_pointer + sizeof(BlockNode), sizeof(MultiBlockNode));ignore_flag = 1; break; \
+		case 9: value_pointer = call_stack[--call_stack_pointer];state = call_stack[--call_stack_pointer];ignore_flag = 1;printf("Return to: %i, ", state); break; \
+		case 10: call_stack[call_stack_pointer++] = state;call_stack[call_stack_pointer++] = value_pointer;state = 22;value_pointer += sizeof(MultiBlockNode);ignore_flag = 1;printf("Call Statement, "); break; \
+		case 11: ((MultiBlockNode*)(value + value_pointer))->statement = push(&alloc, value + value_pointer + sizeof(MultiBlockNode), sizeof(StatementNode));ignore_flag = 1; break; \
+		case 12: ignore_flag = 1; break; \
+		case 13: call_stack[call_stack_pointer++] = state;call_stack[call_stack_pointer++] = value_pointer;state = 15;value_pointer += sizeof(MultiBlockNode);ignore_flag = 1;printf("Call MultiBlock, "); break; \
+		case 14: ((MultiBlockNode*)(value + value_pointer))->next = push(&alloc, value + value_pointer + sizeof(MultiBlockNode), sizeof(MultiBlockNode));ignore_flag = 1; break; \
+		case 15: value_pointer = call_stack[--call_stack_pointer];state = call_stack[--call_stack_pointer];ignore_flag = 1;printf("Return to: %i, ", state); break; \
+		case 16: ((StatementNode*)(value + value_pointer))->test = lex->look; break; \
+		case 17: value_pointer = call_stack[--call_stack_pointer];state = call_stack[--call_stack_pointer];ignore_flag = 1;printf("Return to: %i, ", state); break; \
 	} \
 }
 
@@ -92,13 +131,30 @@ struct __attribute__((__packed__)) _StatementNode
 
 static char parser_table[] = 
 {
-	1, 0, -1, -1, -1, -1, -1, -1, -1, -1, 
-	2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 
-	3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 
-	4, 3, 4, 3, 4, 3, 4, 3, 4, 3, 
+	1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+	-1, -1, -1, -1, 2, 0, -1, -1, -1, -1, 
+	3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 
+	4, 2, 4, 2, 4, 2, 4, 2, 4, 2, 
+	5, 3, 5, 3, 5, 3, 5, 3, 5, 3, 
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-	-1, -1, 6, 4, -1, -1, -1, -1, -1, -1, 
-	7, 5, 7, 5, 7, 5, 7, 5, 7, 5, 
+	7, 4, 7, 4, 7, 4, 7, 4, 7, 4, 
+	7, 4, 8, 5, 7, 4, 10, -1, 7, 4, 
+	9, 6, 9, 6, 9, 6, 9, 6, 9, 6, 
+	14, 9, 14, 9, 14, 9, 14, 9, 14, 9, 
+	-1, -1, 11, 7, -1, -1, -1, -1, -1, -1, 
+	12, 8, 12, 8, 12, 8, 12, 8, 12, 8, 
+	12, 8, 12, 8, 12, 8, 12, 8, 13, -1, 
+	14, 9, 14, 9, 14, 9, 14, 9, 14, 9, 
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+	-1, -1, 16, 10, -1, -1, -1, -1, -1, -1, 
+	17, 11, 17, 11, 17, 11, 17, 11, 17, 11, 
+	17, 11, 19, 13, 17, 11, 17, 11, 17, 11, 
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+	20, 14, 20, 14, 20, 14, 20, 14, 20, 14, 
+	21, 15, 21, 15, 21, 15, 21, 15, 21, 15, 
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+	-1, -1, 23, 16, -1, -1, -1, -1, -1, -1, 
+	24, 17, 24, 17, 24, 17, 24, 17, 24, 17, 
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
 };
 
@@ -160,7 +216,7 @@ static void *push(
 
     // Find the next space to allocate
     alloc->memory_pointer += size;
-    printf("Alloc: %i\n", size);
+    printf("Alloc: %i, ", size);
 
     return ptr;
 }
@@ -202,7 +258,7 @@ Document tinyparse_parse(
         next_state = parser_table[next_index];
         next_commands = parser_table[next_index + 1];
 
-        printf("%i -- %s(%i) --> %i (%i)\n", state, 
+        printf("%i -- %s(%i) --> %i ( %i ", state, 
             lex->look.type_name, lex->look.type, next_state, next_commands);
 
         // There was a syntax error
@@ -220,6 +276,8 @@ Document tinyparse_parse(
         state = next_state;
         EXEC_COMMAND(next_commands);
         if (!ignore_flag) testproject_next(lex);
+        else printf("ignore ");
+        printf(")\n");
 
         // If a return command has been called in the 
         // outer most scope, this is an accepting state
