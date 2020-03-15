@@ -112,8 +112,15 @@ static RuleNode *parse_optional(
     node = malloc(sizeof(RuleNode));
     node->next = NULL;
     node->child = left;
-    node->has_label = 0;
     node->type = RULE_OPTIONAL;
+    node->has_label = 0;
+
+    if (lex->look.type == TinyParse_Of)
+    {
+        tinyparse_match(lex, TinyParse_Of, ":");
+        node->label = tinyparse_match(lex, TinyParse_Name, "Label");
+        node->has_label = 1;
+    }
     return node;
 }
 

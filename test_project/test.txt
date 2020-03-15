@@ -1,5 +1,7 @@
 
-func test_func
-{
+func Testing(lolz, bobz)
+{ 
+    test
+    test
     test
 }

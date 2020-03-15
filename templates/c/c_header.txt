@@ -37,12 +37,20 @@ void lexer_error(LexerStream *lex, Token token, const char *error);
 #ifndef TINYPARSE_H
 #define TINYPARSE_H
 
+typedef struct _MemoryList
+{
+    char *data;
+    int buffer_size;
+    struct _MemoryList *next;
+} MemoryList;
+
 typedef struct _Document
 {
-    void *memory;
+    MemoryList *memory;
     void *root;
 } Document;
 
+void tinyparse_debug_table();
 Document tinyparse_parse(LexerStream *lex);
 void tinyparse_free_document(Document *doc);
 

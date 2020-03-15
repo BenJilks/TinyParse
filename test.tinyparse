@@ -7,20 +7,34 @@ define tokens
     Name    Name
     {       OpenBlock
     }       CloseBlock
+    \(      OpenArg
+    \)      CloseArg
+    ,       Next
 )
 
-Function 
+Function    
 ( 
-    func < Name : name >
-        < Block : block >
+    func < Name : name > \( < Arguments : args > \) 
+        < Block : block > 
 )
 
-Block
-(
-    < Statement : statement >
-    | ( { < MultiBlock : multi_block > } )
+Block       
+( 
+      < Statement : statement > 
+    | ( { < MultiBlock : multi_block } ) 
     : type
 )
 
-MultiBlock  ( < Statement : statement > < MultiBlock : next >? )
+MultiBlock
+(
+    < Statement : statement >
+    < MultiBlock : next >? : has_next
+)
+
 Statement   ( < test : test > )
+
+Arguments
+(
+    < Name : arg >
+    ( , < Arguments : next> )? : has_next
+)

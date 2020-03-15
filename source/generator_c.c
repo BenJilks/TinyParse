@@ -115,6 +115,26 @@ static void generate_type_or(
     OUT(output, tab, "};\n");
 }
 
+static void generate_type_optional(
+    FILE *output,
+    RuleNode *node,
+    LexerStream *lex,
+    Parser *parser,
+    int tab)
+{
+    // If it's named, generate a type label
+    if (node->has_label)
+    {
+        char label[80];
+
+        lexer_read_string(lex, node->label, label);
+        OUT(output, tab, "int %s;\n", label);
+    }
+
+    generate_type_expression(output, node->child, 
+        lex, parser, tab);
+}
+
 static void generate_type_sub_expression(
     FILE *output,
     RuleNode *node,
@@ -147,8 +167,8 @@ static void generate_type_expression(
         case RULE_OR: generate_type_or(
             output, node, lex, parser, tab); break;
         
-        case RULE_OPTIONAL: generate_type_expression(
-            output, node->child, lex, parser, tab); break;
+        case RULE_OPTIONAL: generate_type_optional(
+            output, node, lex, parser, tab); break;
 
         default: break;
     }
@@ -194,6 +214,26 @@ static void generate_command_code(
         fprintf(output, "ignore_flag = 1;");
 
         fprintf(output, "printf(\"Mark type, \");");
+    }
+
+    if (command.flags & FLAG_SET_FLAG)
+    {
+        lexer_read_string(lex, command.attr, attr);
+        fprintf(output, "((%sNode*)(value + value_pointer))->%s "
+            "= 1;", node, attr);
+        fprintf(output, "ignore_flag = 1;");
+
+        fprintf(output, "printf(\"Set flag, \");");
+    }
+
+    if (command.flags & FLAG_UNSET_FLAG)
+    {
+        lexer_read_string(lex, command.attr, attr);
+        fprintf(output, "((%sNode*)(value + value_pointer))->%s "
+            "= 0;", node, attr);
+        fprintf(output, "ignore_flag = 1;");
+
+        fprintf(output, "printf(\"Unset flag, \");");
     }
 
     if (command.flags & FLAG_NULL)
@@ -275,6 +315,7 @@ void generate_implement(
     int i, j;
 
     fprintf(output, "\n#define TABLE_WIDTH %i\n", parser->table_width);
+    fprintf(output, "#define TABLE_SIZE %i\n", parser->table_size);
     fprintf(output, "#define ENTRY_POINT %i\n", parser->entry_index);
 
     fprintf(output, "\nstatic char parser_table[] = \n{\n");

@@ -339,21 +339,47 @@ static EndingStates compile_optional(
     EndingStates from)
 {
     EndingStates endings;
-    int i, null_state;
+    int null_state;
     int null_command;
+
+    LOG("Optional =>\n");
+    debug_start_scope();
+
+    // If there's a label, then initialize its value
+    if (node->has_label)
+    {
+        int state, command;
+
+        state = new_state(fsm, parser);
+        command = new_command(fsm, FLAG_SET_FLAG, node->label);
+        create_all_transition(fsm, parser, state, command, from);
+
+        null_command = new_command(fsm, FLAG_UNSET_FLAG, node->label);
+        from.states[0] = state;
+        from.count = 1;
+    }
+    else
+    {
+        null_command = new_command(fsm, FLAG_NULL, TK_NULL);
+    }
 
     // Create default null transitions
     null_state = new_state(fsm, parser);
-    null_command = new_command(fsm, FLAG_NULL, TK_NULL);
-//    create_all_transition(fsm, parser, null_state, null_command, from);
+    create_all_transition(fsm, parser, null_state, null_command, from);
+
+#if DEBUG
+    int i;
+    for (i = 0; i < from.count; i++)
+        LOG("%i --*--> %i\n", from.states[i], null_state);
+#endif
 
     // Overwrite transition for valid ones
     endings = compile_node(fsm, lex, 
         parser, node->child, from);
+    debug_end_scope();
 
-    // Add null state to endings
-//    endings.states[endings.count] = null_state;
-//    endings.count += 1;
+    endings.states[endings.count] = null_state;
+    endings.count += 1;
     return endings;
 }
 

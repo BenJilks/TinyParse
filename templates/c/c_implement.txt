@@ -16,17 +16,22 @@ static char parser_table[] = {};
 
 typedef struct _Allocator
 {
-    char *memory;
-    int memory_buffer;
-    int memory_pointer;
+    MemoryList *memory;
+    MemoryList *curr;
+    char *ptr;
 } Allocator;
 
 static Allocator create_allocator()
 {
     Allocator alloc;
-    alloc.memory_pointer = 0;
-    alloc.memory_buffer = ALLOCATION_BUFFER;
-    alloc.memory = malloc(alloc.memory_buffer);
+    MemoryList *mem = (MemoryList*)malloc(sizeof(MemoryList));
+
+    mem->data = malloc(ALLOCATION_BUFFER);
+    mem->next = NULL;
+    mem->buffer_size = ALLOCATION_BUFFER;
+    alloc.memory = mem;
+    alloc.curr = mem;
+    alloc.ptr = mem->data;
     return alloc;
 }
 
@@ -35,11 +40,17 @@ static void check_buffer_size(
     int size)
 {
     // Check if there's enough memory available
-    if (alloc->memory_pointer + size >= alloc->memory_buffer)
+    while ((alloc->ptr - alloc->curr->data) + size >= alloc->curr->buffer_size)
     {
-        alloc->memory_buffer += ALLOCATION_BUFFER;
-        alloc->memory = realloc(alloc->memory, 
-            alloc->memory_buffer);
+        printf("Realloc ");
+        MemoryList *mem = (MemoryList*)malloc(sizeof(MemoryList));
+        mem->buffer_size = size + ALLOCATION_BUFFER;
+        mem->data = (char*)malloc(mem->buffer_size);
+        mem->next = NULL;
+
+        alloc->curr->next = mem;
+        alloc->curr = mem;
+        alloc->ptr = mem->data;
     }
 }
 
@@ -52,20 +63,52 @@ static void *push(
 
     // Copy memory into allocation buffer   
     check_buffer_size(alloc, size);
-    ptr = alloc->memory + alloc->memory_pointer;
+    ptr = (void*)alloc->ptr;
     memcpy(ptr, data, size);
 
     // Find the next space to allocate
-    alloc->memory_pointer += size;
+    alloc->ptr += size;
     printf("Alloc: %i, ", size);
 
     return ptr;
 }
 
+static void free_memory_list(
+    MemoryList *mem)
+{
+    if (mem->next != NULL)
+        free_memory_list(mem->next);
+    
+    free(mem->data);
+    free(mem);
+}
+
 static void free_allocator(
     Allocator *alloc)
 {
-    free(alloc->memory);
+    free_memory_list(alloc->memory);
+}
+
+void tinyparse_debug_table()
+{
+    int i, j;
+
+    for (i = 0; i < TABLE_SIZE; i++)
+    {
+        for (j = 0; j < TABLE_WIDTH; j += 2)
+        {
+            int to, command;
+            const char *name;
+            
+            to = parser_table[i * TABLE_WIDTH + j + 0];
+            command = parser_table[i * TABLE_WIDTH + j + 1];
+            name = type_names[j / 2];
+            if (to != -1)
+            {
+                printf("%i -%s-> %i (%i)\n", i, name, to, command);
+            }
+        }
+    }
 }
 
 Document tinyparse_parse(
@@ -80,17 +123,19 @@ Document tinyparse_parse(
 
     // Stacks
     Allocator alloc;
-    int call_stack[80];
+    char *value;
+    int *call_stack;
     int call_stack_pointer;
-    char value[80];
     int value_pointer;
 
     state = ENTRY_POINT;
     call_stack_pointer = 2;
+    call_stack = malloc(sizeof(int) * 1024);
     call_stack[0] = 0;              // Return state
     call_stack[1] = 0;              // Value pointer
     alloc = create_allocator();
     value_pointer = 0;
+    value = malloc(1024);
 
     for (;;)
     {
@@ -124,8 +169,15 @@ Document tinyparse_parse(
         // outer most scope, this is an accepting state
         if (call_stack_pointer <= 0)
             break;
+        
+        printf("Value pointer: %i\n", value_pointer);
+        printf("Call stack: ");
+        for (int i = 0; i < call_stack_pointer; i++)
+            printf("%i ", call_stack[i]);
+        printf("\n\n");
     }
     printf("Accepted!!!\n");
+    free(call_stack);
 
     Document doc;
     doc.memory = alloc.memory;
@@ -136,5 +188,6 @@ Document tinyparse_parse(
 void tinyparse_free_document(
     Document *doc)
 {
-    free(doc->memory);
+    free_memory_list(doc->memory);
+    free(doc->root);
 }
