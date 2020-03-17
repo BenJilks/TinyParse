@@ -15,9 +15,9 @@ void debug_end_scope();
 
 #define _LOG(...) ;
 #define LOG(...) ;
-void debug_prefix() {}
-void debug_start_scope() {}
-void debug_end_scope() {}
+static void debug_prefix() {}
+static void debug_start_scope() {}
+static void debug_end_scope() {}
 
 #endif
 

@@ -2,39 +2,10 @@ project TestProject
 
 define tokens
 (
-    func    Func
-    test    Test
-    Name    Name
-    {       OpenBlock
-    }       CloseBlock
-    \(      OpenArg
-    \)      CloseArg
-    ,       Next
+    Int         Int
+    +           Add 
+    -           Subtract
 )
 
-Function    
-( 
-    func < Name : name > \( < Arguments : args > \) 
-        < Block : block > 
-)
-
-Block       
-( 
-      < Statement : statement > 
-    | ( { < MultiBlock : multi_block } ) 
-    : type
-)
-
-MultiBlock
-(
-    < Statement : statement >
-    < MultiBlock : next >? : has_next
-)
-
-Statement   ( < test : test > )
-
-Arguments
-(
-    < Name : arg >
-    ( , < Arguments : next> )? : has_next
-)
+AddOp           ( + | - : type )
+Function        ( < Int : left > ( AddOp < Function : right > )? : has_right )

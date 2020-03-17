@@ -1,7 +1,2 @@
 
-func Testing(lolz, bobz)
-{ 
-    test
-    test
-    test
-}
+func

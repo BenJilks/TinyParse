@@ -12,7 +12,17 @@ static char parser_table[] = {};
 #endif
 
 #define STATE_WIDTH 2
-#define ALLOCATION_BUFFER 80
+#define ALLOCATION_BUFFER 1024
+
+#define FLAG_NOP        0b00000000
+#define FLAG_SET        0b00000001
+#define FLAG_PUSH_SUB   0b00000010
+#define FLAG_CALL       0b00000100
+#define FLAG_RETURN     0b00001000
+#define FLAG_MARK_TYPE  0b00010000
+#define FLAG_SET_FLAG   0b00100000
+#define FLAG_UNSET_FLAG 0b01000000
+#define FLAG_NULL       0b10000000
 
 typedef struct _Allocator
 {
@@ -42,7 +52,6 @@ static void check_buffer_size(
     // Check if there's enough memory available
     while ((alloc->ptr - alloc->curr->data) + size >= alloc->curr->buffer_size)
     {
-        printf("Realloc ");
         MemoryList *mem = (MemoryList*)malloc(sizeof(MemoryList));
         mem->buffer_size = size + ALLOCATION_BUFFER;
         mem->data = (char*)malloc(mem->buffer_size);
@@ -68,8 +77,6 @@ static void *push(
 
     // Find the next space to allocate
     alloc->ptr += size;
-    printf("Alloc: %i, ", size);
-
     return ptr;
 }
 
@@ -152,7 +159,7 @@ Document tinyparse_parse(
         {
             lexer_error(lex, lex->look, 
                 "Unexpected token");
-            testproject_next(lex);
+            LEXER_NEXT(lex);
 
             break;
         }
@@ -161,7 +168,7 @@ Document tinyparse_parse(
         ignore_flag = 0;
         state = next_state;
         EXEC_COMMAND(next_commands);
-        if (!ignore_flag) testproject_next(lex);
+        if (!ignore_flag) LEXER_NEXT(lex);
         else printf("ignore ");
         printf(")\n");
 
@@ -169,14 +176,7 @@ Document tinyparse_parse(
         // outer most scope, this is an accepting state
         if (call_stack_pointer <= 0)
             break;
-        
-        printf("Value pointer: %i\n", value_pointer);
-        printf("Call stack: ");
-        for (int i = 0; i < call_stack_pointer; i++)
-            printf("%i ", call_stack[i]);
-        printf("\n\n");
     }
-    printf("Accepted!!!\n");
     free(call_stack);
 
     Document doc;

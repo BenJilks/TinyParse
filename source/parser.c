@@ -246,7 +246,7 @@ static void link_rule(
 
     char name[80];
     lexer_read_string(lex, rule->name, name);
-    printf("Linking rule %s\n", name);
+    LOG("Linking rule %s\n", name);
 
     for (i = 0; i < rule->link_count; i++)
     {
@@ -255,7 +255,7 @@ static void link_rule(
     }
 }
 
-static void link_compiled_rules(
+static int link_compiled_rules(
     LexerStream *lex,
     Parser *parser, 
     FSM *compiled_rules,
@@ -289,6 +289,14 @@ static void link_compiled_rules(
             rule->commands, sizeof(Command) * rule->command_count);
     }
 
+    // If no entry point was found
+    if (parser->entry_index == -1)
+    {
+        printf("Error: Could not find entry point '%s'\n", 
+            entry_point);
+        return -1;
+    }
+
     // Allocate table
     parser->table = malloc(parser->table_size * 
         parser->table_width);
@@ -318,15 +326,17 @@ static void link_compiled_rules(
     // Link sub calls
     for (i = 0; i < parser->rule_count; i++)
         link_rule(lex, parser, compiled_rules, &compiled_rules[i]);
+    
+    return 0;
 }
 
-void parser_compile_and_link(
+int parser_compile_and_link(
     Parser *parser, 
     LexerStream *lex,
     const char *entry_point)
 {
     FSM *compiled_rules;
-    int i;
+    int i, success;
 
     // Calculate the width of each 
     // row in the parser table
@@ -341,10 +351,11 @@ void parser_compile_and_link(
     }
 
     // Link and free
-    link_compiled_rules(lex, parser, 
+    success = link_compiled_rules(lex, parser, 
         compiled_rules, entry_point);
     
     free(compiled_rules);
+    return success;
 }
 
 void parser_free(

@@ -30,3 +30,8 @@ add_custom_target(tinylex
 add_executable(tinyparse ${all_SRCS})
 add_dependencies(tinyparse template_files)
 add_dependencies(tinyparse tinylex)
+
+install(TARGETS tinyparse
+    RUNTIME 
+        DESTINATION bin
+)

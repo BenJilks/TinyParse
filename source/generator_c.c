@@ -2,6 +2,7 @@
 #include "c_header.h"
 #include "c_implement.h"
 #include "FSM.h"
+#include <ctype.h>
 
 #define FOR_EACH_RULE(item, name, do) \
 { \
@@ -291,6 +292,15 @@ static void generate_commands(
     Command command;
     int i;
 
+    fprintf(output, "static int command_flags[] = {");
+    for (i = 0; i < parser->command_count; i++)
+    {
+        command = parser->commands[i];
+        fprintf(output, "%i, ", command.flags);
+        fprintf(output, "%i, ", command.to_rule);
+    }
+    fprintf(output, "};\n");
+
     fprintf(output, "#define EXEC_COMMAND(command) \\\n");
     fprintf(output, "{ \\\n");
     fprintf(output, "\tswitch(command) \\\n");
@@ -307,16 +317,35 @@ static void generate_commands(
     fprintf(output, "}\n");
 }
 
+char *to_lower(
+    char *str)
+{
+    int len, i;
+    char *out;
+
+    len = strlen(str);
+    out = malloc(len + 1);
+    out[len] = '\0';
+
+    for (i = 0; i < len; i++)
+        out[i] = tolower(str[i]);
+    return out;
+}
+
 void generate_implement(
     FILE* output,
     LexerStream *lex,
     Parser *parser)
 {
     int i, j;
+    char *title_lower;
 
+    title_lower = to_lower(parser->project_name);
     fprintf(output, "\n#define TABLE_WIDTH %i\n", parser->table_width);
     fprintf(output, "#define TABLE_SIZE %i\n", parser->table_size);
     fprintf(output, "#define ENTRY_POINT %i\n", parser->entry_index);
+    fprintf(output, "#define LEXER_NEXT %s_next\n", title_lower);
+    free(title_lower);
 
     fprintf(output, "\nstatic char parser_table[] = \n{\n");
     for (i = 0; i < parser->table_size; i++)

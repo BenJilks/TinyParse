@@ -39,7 +39,7 @@ int parser_find_rule_index(Parser *parser, const char *name);
 int parser_find_token_id(Parser *parser, const char *alias);
 void parser_parse(Parser *parser, LexerStream *lex);
 
-void parser_compile_and_link(Parser *parser, LexerStream *lex, 
+int parser_compile_and_link(Parser *parser, LexerStream *lex, 
     const char *entry_point);
 
 void parser_free(Parser *parser);

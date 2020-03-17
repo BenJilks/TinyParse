@@ -68,7 +68,6 @@ static void create_transision(
     FSM *fsm,
     Parser *parser,
     int from_state,
-    EndingStates from,
     int state,
     int token_index,
     int command_id)
@@ -96,10 +95,10 @@ static void create_all_transition(
         int from_state;
 
         from_state = from.states[i];
-        for (j = 0; j < parser->table_width; j++)
+        for (j = 0; j < parser->table_width/2; j++)
         {
             create_transision(fsm, parser, 
-                from_state, from, to_state, 
+                from_state, to_state, 
                 j, command_id);
         }
     }
@@ -226,7 +225,7 @@ static EndingStates compile_match(
     for (i = 0; i < from.count; i++)
     {
         create_transision(fsm, parser, 
-            from.states[i], from, state, 
+            from.states[i], state, 
             token_index, command_id);
 
         LOG("%i --%s--> %i\n", from.states[i], 
