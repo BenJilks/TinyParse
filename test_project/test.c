@@ -39,6 +39,158 @@ void draw_path(
         to_x - from_x, to_y - from_y);
 }
 
+void find_groups(
+    int state_from, 
+    int *groups, 
+    int *group_len)
+{
+    int i;
+
+	memset(group_len, 0, TABLE_SIZE * sizeof(int));
+    for (i = 0; i < TABLE_WIDTH; i += 2)
+    {
+        int to, command;
+
+        to = parser_table[state_from * TABLE_WIDTH + i];
+        command = parser_table[state_from * TABLE_WIDTH + i + 1];
+        if (to != -1)
+        {
+            groups[to * TABLE_WIDTH + group_len[to]] = i/2;
+            groups[to * TABLE_WIDTH + group_len[to]+1] = command;
+            group_len[to] += 2;
+
+            if (command != -1 && command_flags[command*2] & FLAG_CALL)
+            {
+                int call_to;
+
+                call_to = command_flags[command*2+1];
+                groups[call_to * TABLE_WIDTH + group_len[call_to]] = i/2;
+                groups[call_to * TABLE_WIDTH + group_len[call_to]+1] = -1;
+                group_len[call_to] += 2;
+            }
+        }
+    }
+}
+
+#define APPEND(label, ...) \
+    { sprintf(label, __VA_ARGS__); label += strlen(label); }
+
+#define PRINT_FLAG(flag, name) \
+{ \
+    if (command & flag) \
+    { \
+        if (!is_first) APPEND(label, ", "); \
+        APPEND(label, name); \
+        is_first = 0; \
+    } \
+}
+
+void print_command(
+    char *label, 
+    int command)
+{
+    int is_first;
+
+    APPEND(label, " [");
+    is_first = 1;
+
+    PRINT_FLAG(FLAG_CALL, "Call");
+    PRINT_FLAG(FLAG_MARK_TYPE, "Mark-Type");
+    PRINT_FLAG(FLAG_PUSH_SUB, "Push-Sub");
+    PRINT_FLAG(FLAG_RETURN, "Return");
+    PRINT_FLAG(FLAG_SET, "Set");
+    PRINT_FLAG(FLAG_SET_FLAG, "Set-Flag");
+    PRINT_FLAG(FLAG_UNSET_FLAG, "Unset-Flag");
+    PRINT_FLAG(FLAG_NULL, "Null");
+    PRINT_FLAG(FLAG_NULL, "No-Op");
+    APPEND(label, "]");
+}
+
+void make_label(
+    char *label,
+    int len, int to,
+    int *groups)
+{
+    int i;
+
+    for (i = 0; i < len; i += 2)
+    {
+        int token;
+        int command;
+
+        token = groups[to * TABLE_WIDTH + i];
+        command = groups[to * TABLE_WIDTH + i + 1];
+        APPEND(label, "%s", type_names[token]);
+
+        if (command != -1)
+        {
+            print_command(label, command);
+            label += strlen(label);
+        }
+        
+        if (i < len - 2)
+            APPEND(label, ", ");
+    }
+}
+
+void draw_transition(
+    FILE* file,
+    char *label,
+    int top,
+    int x, int y,
+    int state_from,
+    int state_to,
+    int state_distance)
+{
+    int to_x, to_y;
+    int arc, gap;
+
+    gap = abs(state_to - state_from);
+    to_x = 100 + (state_distance * state_to);
+    to_y = y + (top? -50 : 50);
+    arc = (top? 1 : -1) * gap * 100 + gap * 40;
+    draw_path(file, 
+        x, to_y, 
+        to_x, to_y, 
+        arc);
+    
+    draw_text(file, 
+        ((to_x - x) / 2) + x, 
+        to_y - arc/2 - (top ? 1 : -1)*10,
+        label);
+}
+
+void draw_groups(
+    FILE *file, 
+    int *groups, 
+    int *group_len, 
+    int x, int y, 
+    int state_index,
+    int state_distance)
+{
+    int i;
+
+    for (i = 0; i < TABLE_SIZE; i++)
+    {
+        int to, len;
+
+        to = i;
+        len = group_len[i];
+        if (len >= 1)
+        {
+            char label[1024];
+            int to_x, to_y, arc;
+            int top;
+
+            top = (i % 2 != 0);
+            make_label(label, len, to, groups);
+            draw_transition(file, label, top, x, y, 
+                state_index, i, state_distance);
+        }
+    }
+
+}
+
 void create_visual(
     const char *file_path)
 {
@@ -54,86 +206,17 @@ void create_visual(
     for (i = 0; i < TABLE_SIZE; i++)
     {
         char name[80];
-        int j;
 
         sprintf(name, "S%i", i);
         draw_circle(file, x, y, 50);
         draw_text(file, x, y, name);
 
-        int groups[TABLE_SIZE][TABLE_WIDTH];
+        int groups[TABLE_SIZE * TABLE_WIDTH];
         int group_len[TABLE_SIZE];
-        memset(group_len, 0, TABLE_SIZE * sizeof(int));
-        for (j = 0; j < TABLE_WIDTH; j += 2)
-        {
-            int to, command;
-
-            to = parser_table[i * TABLE_WIDTH + j];
-            command = parser_table[i * TABLE_WIDTH + j + 1];
-            if (to != -1)
-            {
-                groups[to][group_len[to]] = j/2;
-                groups[to][group_len[to]+1] = command;
-                group_len[to] += 2;
-
-                if (command != -1 && command_flags[command*2] & FLAG_CALL)
-                {
-                    int call_to;
-
-                    call_to = command_flags[command*2+1];
-                    groups[call_to][group_len[call_to]] = j/2;
-                    group_len[call_to] += 2;
-                }
-            }
-        }
-
-        for (j = 0; j < TABLE_SIZE; j++)
-        {
-            int to, len;
-            int top, gap;
-
-            to = j;
-            len = group_len[j];
-            if (len >= 1)
-            {
-                char label[1024];
-                int k, to_x, to_y, arc;
-                char *ptr;
-
-                if (len == TOKEN_COUNT)
-                {
-                    sprintf(label, "*");
-                }
-                else
-                {
-                    ptr = label;
-                    for (k = 0; k < len; k += 2)
-                    {
-                        sprintf(ptr, "%s", type_names[groups[to][k]]); ptr += strlen(ptr);
-                        if (k < len - 2)
-                        {
-                            sprintf(ptr, ", "); 
-                            ptr += strlen(ptr);
-                        }
-                    }
-                }
-
-                top = j % 2 != 0;
-                gap = abs(j - i);
-                to_x = 100 + (state_distance * to);
-                to_y = y + (top? -50 : 50);
-                arc = (top? 1 : -1) * gap * 100 + gap * 40;
-                draw_path(file, 
-                    x, to_y, 
-                    to_x, to_y, 
-                    arc);
-                
-                draw_text(file, 
-                    ((to_x - x) / 2) + x, 
-                    to_y - arc/2 - (top ? 1 : -1)*10,
-                    label);
-            }
-        }
-
+        find_groups(i, groups, group_len);
+        draw_groups(file, groups, group_len, 
+            x, y, i, state_distance);
+        
         x += state_distance;
     }
 

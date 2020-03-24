@@ -1,42 +1,42 @@
 <svg width="10000" xmlns="http://www.w3.org/2000/svg">
 <circle cx="100" cy="350" r="50" stroke="black" stroke-width="2" fill="white"/>
 <text x="100" y="350" dominant-baseline="middle" text-anchor="middle">S0</text>
-<path d="M100 300 q 150 -140 300 0" fill="none" stroke="black" stroke-width="2" /><text x="250" y="220" dominant-baseline="middle" text-anchor="middle">Int, Add, Subtract</text>
+<path d="M100 300 q 150 -140 300 0" fill="none" stroke="black" stroke-width="2" /><text x="250" y="220" dominant-baseline="middle" text-anchor="middle">Int [], Add [], Subtract []</text>
 <circle cx="400" cy="350" r="50" stroke="black" stroke-width="2" fill="white"/>
 <text x="400" y="350" dominant-baseline="middle" text-anchor="middle">S1</text>
 <path d="M400 400 q 150 60 300 0" fill="none" stroke="black" stroke-width="2" /><text x="550" y="440" dominant-baseline="middle" text-anchor="middle">Add</text>
 <path d="M400 300 q 300 -280 600 0" fill="none" stroke="black" stroke-width="2" /><text x="700" y="150" dominant-baseline="middle" text-anchor="middle">Subtract</text>
 <circle cx="700" cy="350" r="50" stroke="black" stroke-width="2" fill="white"/>
 <text x="700" y="350" dominant-baseline="middle" text-anchor="middle">S2</text>
-<path d="M700 400 q 300 120 600 0" fill="none" stroke="black" stroke-width="2" /><text x="1000" y="470" dominant-baseline="middle" text-anchor="middle">Int, Add, Subtract</text>
+<path d="M700 400 q 300 120 600 0" fill="none" stroke="black" stroke-width="2" /><text x="1000" y="470" dominant-baseline="middle" text-anchor="middle">Int [Set], Add [Set], Subtract [Set]</text>
 <circle cx="1000" cy="350" r="50" stroke="black" stroke-width="2" fill="white"/>
 <text x="1000" y="350" dominant-baseline="middle" text-anchor="middle">S3</text>
-<path d="M1000 400 q 150 60 300 0" fill="none" stroke="black" stroke-width="2" /><text x="1150" y="440" dominant-baseline="middle" text-anchor="middle">Int, Add, Subtract</text>
+<path d="M1000 400 q 150 60 300 0" fill="none" stroke="black" stroke-width="2" /><text x="1150" y="440" dominant-baseline="middle" text-anchor="middle">Int [Set], Add [Set], Subtract [Set]</text>
 <circle cx="1300" cy="350" r="50" stroke="black" stroke-width="2" fill="white"/>
 <text x="1300" y="350" dominant-baseline="middle" text-anchor="middle">S4</text>
 <circle cx="1600" cy="350" r="50" stroke="black" stroke-width="2" fill="white"/>
 <text x="1600" y="350" dominant-baseline="middle" text-anchor="middle">S5</text>
-<path d="M1600 400 q 150 60 300 0" fill="none" stroke="black" stroke-width="2" /><text x="1750" y="440" dominant-baseline="middle" text-anchor="middle">Int</text>
+<path d="M1600 400 q 150 60 300 0" fill="none" stroke="black" stroke-width="2" /><text x="1750" y="440" dominant-baseline="middle" text-anchor="middle">Int [Push-Sub]</text>
 <circle cx="1900" cy="350" r="50" stroke="black" stroke-width="2" fill="white"/>
 <text x="1900" y="350" dominant-baseline="middle" text-anchor="middle">S6</text>
-<path d="M1900 300 q 150 -140 300 0" fill="none" stroke="black" stroke-width="2" /><text x="2050" y="220" dominant-baseline="middle" text-anchor="middle">Int, Add, Subtract</text>
+<path d="M1900 300 q 150 -140 300 0" fill="none" stroke="black" stroke-width="2" /><text x="2050" y="220" dominant-baseline="middle" text-anchor="middle">Int [Push-Sub, Set], Add [Push-Sub, Set], Subtract [Push-Sub, Set]</text>
 <circle cx="2200" cy="350" r="50" stroke="black" stroke-width="2" fill="white"/>
 <text x="2200" y="350" dominant-baseline="middle" text-anchor="middle">S7</text>
 <path d="M2200 400 q -1050 420 -2100 0" fill="none" stroke="black" stroke-width="2" /><text x="1150" y="620" dominant-baseline="middle" text-anchor="middle">Int, Add, Subtract</text>
-<path d="M2200 300 q 300 -280 600 0" fill="none" stroke="black" stroke-width="2" /><text x="2500" y="150" dominant-baseline="middle" text-anchor="middle">Int, Add, Subtract</text>
+<path d="M2200 300 q 300 -280 600 0" fill="none" stroke="black" stroke-width="2" /><text x="2500" y="150" dominant-baseline="middle" text-anchor="middle">Int [Call, Set], Add [Call, Set], Subtract [Call, Set]</text>
 <circle cx="2500" cy="350" r="50" stroke="black" stroke-width="2" fill="white"/>
 <text x="2500" y="350" dominant-baseline="middle" text-anchor="middle">S8</text>
-<path d="M2500 400 q 600 240 1200 0" fill="none" stroke="black" stroke-width="2" /><text x="3100" y="530" dominant-baseline="middle" text-anchor="middle">Int, Add, Subtract</text>
+<path d="M2500 400 q 600 240 1200 0" fill="none" stroke="black" stroke-width="2" /><text x="3100" y="530" dominant-baseline="middle" text-anchor="middle">Int [Return], Add [Return], Subtract [Return]</text>
 <circle cx="2800" cy="350" r="50" stroke="black" stroke-width="2" fill="white"/>
 <text x="2800" y="350" dominant-baseline="middle" text-anchor="middle">S9</text>
 <path d="M2800 300 q -1200 -1120 -2400 0" fill="none" stroke="black" stroke-width="2" /><text x="1600" y="-270" dominant-baseline="middle" text-anchor="middle">Int</text>
-<path d="M2800 400 q 150 60 300 0" fill="none" stroke="black" stroke-width="2" /><text x="2950" y="440" dominant-baseline="middle" text-anchor="middle">Int</text>
+<path d="M2800 400 q 150 60 300 0" fill="none" stroke="black" stroke-width="2" /><text x="2950" y="440" dominant-baseline="middle" text-anchor="middle">Int [Call, Push-Sub]</text>
 <circle cx="3100" cy="350" r="50" stroke="black" stroke-width="2" fill="white"/>
 <text x="3100" y="350" dominant-baseline="middle" text-anchor="middle">S10</text>
-<path d="M3100 300 q 150 -140 300 0" fill="none" stroke="black" stroke-width="2" /><text x="3250" y="220" dominant-baseline="middle" text-anchor="middle">Int, Add, Subtract</text>
+<path d="M3100 300 q 150 -140 300 0" fill="none" stroke="black" stroke-width="2" /><text x="3250" y="220" dominant-baseline="middle" text-anchor="middle">Int [Call, Push-Sub, Set], Add [Call, Push-Sub, Set], Subtract [Call, Push-Sub, Set]</text>
 <circle cx="3400" cy="350" r="50" stroke="black" stroke-width="2" fill="white"/>
 <text x="3400" y="350" dominant-baseline="middle" text-anchor="middle">S11</text>
-<path d="M3400 400 q 150 60 300 0" fill="none" stroke="black" stroke-width="2" /><text x="3550" y="440" dominant-baseline="middle" text-anchor="middle">Int, Add, Subtract</text>
+<path d="M3400 400 q 150 60 300 0" fill="none" stroke="black" stroke-width="2" /><text x="3550" y="440" dominant-baseline="middle" text-anchor="middle">Int [Return], Add [Return], Subtract [Return]</text>
 <circle cx="3700" cy="350" r="50" stroke="black" stroke-width="2" fill="white"/>
 <text x="3700" y="350" dominant-baseline="middle" text-anchor="middle">S12</text>
 </svg>
