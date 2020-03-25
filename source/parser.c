@@ -1,6 +1,7 @@
 #include "parser.h"
 #include "debug.h"
 #include "FSM.h"
+#include "tinylex_intergration.h"
 
 #define RULE_BUFFER_SIZE 80
 
@@ -80,13 +81,40 @@ static void parse_project_name(
     memcpy(parser->project_name, data, name.len);
 }
 
+void parser_add_token(
+	Parser *parser,
+	const char *name,
+	const char *value)
+{
+	int token_index;
+
+	// Copy token to the parser
+    token_index = parser->token_count * TOKEN_LEN * 2;
+	strcpy(parser->tokens + token_index, name);
+	strcpy(parser->tokens + token_index + TOKEN_LEN, value);
+	parser->token_count += 1;
+
+	// Check to see if there's any memory left for the next token,
+	// otherwise allocate more
+	if (parser->token_count >= parser->token_buffer)
+	{
+		parser->token_buffer += TOKEN_BUFFER;
+		parser->tokens = realloc(parser->tokens, 
+			parser->token_buffer * TOKEN_LEN * 2);
+	}
+
+	// Debug statement
+	LOG("\t => %s -> '%s'\n", 
+		parser->tokens + token_index + TOKEN_LEN, 
+		parser->tokens + token_index);
+}
+
 static void parse_define_tokens(
     Parser *parser,
     LexerStream *lex)
 {
     Token alias_token;
     Token name_token;
-    int token_index;
 
     LOG("Defining tokens\n");
 
@@ -95,31 +123,32 @@ static void parse_define_tokens(
     tinyparse_match(lex, TinyParse_Open, "(");
     while (lex->look.type != TinyParse_Close)
     {
+		char name[80], value[80];
+
         // Parse token data
         alias_token = tinyparse_next(lex);
         name_token = tinyparse_match(lex, TinyParse_Name, "Name");
 
         // Read data into the token buffer
-        token_index = parser->token_count * TOKEN_LEN * 2;
-        lexer_read_string(lex, alias_token, parser->tokens + token_index);
-        lexer_read_string(lex, name_token, parser->tokens + token_index + TOKEN_LEN);
-        parser->token_count += 1;
-
-        // Debug statement
-        LOG("\t => %s -> '%s'\n", 
-            parser->tokens + token_index + TOKEN_LEN, 
-            parser->tokens + token_index);
-
-        // Check to see if there's any memory left for the next token,
-        // otherwise allocate more
-        if (parser->token_count >= parser->token_buffer)
-        {
-            parser->token_buffer += TOKEN_BUFFER;
-            parser->tokens = realloc(parser->tokens, 
-                parser->token_buffer * TOKEN_LEN * 2);
-        }
+        lexer_read_string(lex, alias_token, name);
+        lexer_read_string(lex, name_token, value);
+		parser_add_token(parser, name, value);
     }
     tinyparse_match(lex, TinyParse_Close, ")");
+}
+
+static void parse_tinylexer(
+	Parser *parser,
+	LexerStream *lex)
+{
+	Token file_path_token;
+	char file_path[80];
+
+	file_path_token = tinyparse_next(lex);
+	lexer_read_string(lex, file_path_token, file_path);
+	LOG("Lexer: %s\n", file_path);
+
+	parse_tinylex(parser, file_path);
 }
 
 static void parse_define(
@@ -137,6 +166,8 @@ static void parse_define(
     // Decode this type name
     if (!strcmp(type_name, "tokens"))
         parse_define_tokens(parser, lex);
+	else if (!strcmp(type_name, "tinylexer"))
+		parse_tinylexer(parser, lex);
 }
 
 static void parse_rule(

@@ -1,0 +1,5 @@
+project TinyLexIntergration
+
+Name	([^\s\[\]\+\*\?]|(\\.))+
+Regex	[^\s]+
+

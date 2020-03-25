@@ -1,42 +1,127 @@
 <svg width="10000" xmlns="http://www.w3.org/2000/svg">
-<circle cx="100" cy="350" r="50" stroke="black" stroke-width="2" fill="white"/>
-<text x="100" y="350" dominant-baseline="middle" text-anchor="middle">S0</text>
-<path d="M100 300 q 150 -140 300 0" fill="none" stroke="black" stroke-width="2" /><text x="250" y="220" dominant-baseline="middle" text-anchor="middle">Int [], Add [], Subtract []</text>
-<circle cx="400" cy="350" r="50" stroke="black" stroke-width="2" fill="white"/>
-<text x="400" y="350" dominant-baseline="middle" text-anchor="middle">S1</text>
-<path d="M400 400 q 150 60 300 0" fill="none" stroke="black" stroke-width="2" /><text x="550" y="440" dominant-baseline="middle" text-anchor="middle">Add</text>
-<path d="M400 300 q 300 -280 600 0" fill="none" stroke="black" stroke-width="2" /><text x="700" y="150" dominant-baseline="middle" text-anchor="middle">Subtract</text>
-<circle cx="700" cy="350" r="50" stroke="black" stroke-width="2" fill="white"/>
-<text x="700" y="350" dominant-baseline="middle" text-anchor="middle">S2</text>
-<path d="M700 400 q 300 120 600 0" fill="none" stroke="black" stroke-width="2" /><text x="1000" y="470" dominant-baseline="middle" text-anchor="middle">Int [Set], Add [Set], Subtract [Set]</text>
-<circle cx="1000" cy="350" r="50" stroke="black" stroke-width="2" fill="white"/>
-<text x="1000" y="350" dominant-baseline="middle" text-anchor="middle">S3</text>
-<path d="M1000 400 q 150 60 300 0" fill="none" stroke="black" stroke-width="2" /><text x="1150" y="440" dominant-baseline="middle" text-anchor="middle">Int [Set], Add [Set], Subtract [Set]</text>
-<circle cx="1300" cy="350" r="50" stroke="black" stroke-width="2" fill="white"/>
-<text x="1300" y="350" dominant-baseline="middle" text-anchor="middle">S4</text>
-<circle cx="1600" cy="350" r="50" stroke="black" stroke-width="2" fill="white"/>
-<text x="1600" y="350" dominant-baseline="middle" text-anchor="middle">S5</text>
-<path d="M1600 400 q 150 60 300 0" fill="none" stroke="black" stroke-width="2" /><text x="1750" y="440" dominant-baseline="middle" text-anchor="middle">Int [Push-Sub]</text>
-<circle cx="1900" cy="350" r="50" stroke="black" stroke-width="2" fill="white"/>
-<text x="1900" y="350" dominant-baseline="middle" text-anchor="middle">S6</text>
-<path d="M1900 300 q 150 -140 300 0" fill="none" stroke="black" stroke-width="2" /><text x="2050" y="220" dominant-baseline="middle" text-anchor="middle">Int [Push-Sub, Set], Add [Push-Sub, Set], Subtract [Push-Sub, Set]</text>
-<circle cx="2200" cy="350" r="50" stroke="black" stroke-width="2" fill="white"/>
-<text x="2200" y="350" dominant-baseline="middle" text-anchor="middle">S7</text>
-<path d="M2200 400 q -1050 420 -2100 0" fill="none" stroke="black" stroke-width="2" /><text x="1150" y="620" dominant-baseline="middle" text-anchor="middle">Int, Add, Subtract</text>
-<path d="M2200 300 q 300 -280 600 0" fill="none" stroke="black" stroke-width="2" /><text x="2500" y="150" dominant-baseline="middle" text-anchor="middle">Int [Call, Set], Add [Call, Set], Subtract [Call, Set]</text>
-<circle cx="2500" cy="350" r="50" stroke="black" stroke-width="2" fill="white"/>
-<text x="2500" y="350" dominant-baseline="middle" text-anchor="middle">S8</text>
-<path d="M2500 400 q 600 240 1200 0" fill="none" stroke="black" stroke-width="2" /><text x="3100" y="530" dominant-baseline="middle" text-anchor="middle">Int [Return], Add [Return], Subtract [Return]</text>
-<circle cx="2800" cy="350" r="50" stroke="black" stroke-width="2" fill="white"/>
-<text x="2800" y="350" dominant-baseline="middle" text-anchor="middle">S9</text>
-<path d="M2800 300 q -1200 -1120 -2400 0" fill="none" stroke="black" stroke-width="2" /><text x="1600" y="-270" dominant-baseline="middle" text-anchor="middle">Int</text>
-<path d="M2800 400 q 150 60 300 0" fill="none" stroke="black" stroke-width="2" /><text x="2950" y="440" dominant-baseline="middle" text-anchor="middle">Int [Call, Push-Sub]</text>
-<circle cx="3100" cy="350" r="50" stroke="black" stroke-width="2" fill="white"/>
-<text x="3100" y="350" dominant-baseline="middle" text-anchor="middle">S10</text>
-<path d="M3100 300 q 150 -140 300 0" fill="none" stroke="black" stroke-width="2" /><text x="3250" y="220" dominant-baseline="middle" text-anchor="middle">Int [Call, Push-Sub, Set], Add [Call, Push-Sub, Set], Subtract [Call, Push-Sub, Set]</text>
-<circle cx="3400" cy="350" r="50" stroke="black" stroke-width="2" fill="white"/>
-<text x="3400" y="350" dominant-baseline="middle" text-anchor="middle">S11</text>
-<path d="M3400 400 q 150 60 300 0" fill="none" stroke="black" stroke-width="2" /><text x="3550" y="440" dominant-baseline="middle" text-anchor="middle">Int [Return], Add [Return], Subtract [Return]</text>
-<circle cx="3700" cy="350" r="50" stroke="black" stroke-width="2" fill="white"/>
-<text x="3700" y="350" dominant-baseline="middle" text-anchor="middle">S12</text>
+<circle cx="100" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="100" y="500" dominant-baseline="middle" text-anchor="middle">S0</text>
+<path d="M100 450 q 450 -270 900 0" fill="none" stroke="black" stroke-width="2" /><text x="550" y="305" dominant-baseline="middle" text-anchor="middle">Add [Mark-Type], Subtract [Mark-Type]</text>
+<circle cx="400" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="400" y="500" dominant-baseline="middle" text-anchor="middle">S1</text>
+<path d="M400 550 q 450 150 900 0" fill="none" stroke="black" stroke-width="2" /><text x="850" y="635" dominant-baseline="middle" text-anchor="middle">Int [Return], Float [Return], Add [Return], Subtract [Return], Multiply [Return], Divide [Return], Open [Return], Close [Return]</text>
+<circle cx="700" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="700" y="500" dominant-baseline="middle" text-anchor="middle">S2</text>
+<path d="M700 550 q 300 100 600 0" fill="none" stroke="black" stroke-width="2" /><text x="1000" y="610" dominant-baseline="middle" text-anchor="middle">Int [Return], Float [Return], Add [Return], Subtract [Return], Multiply [Return], Divide [Return], Open [Return], Close [Return]</text>
+<circle cx="1000" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="1000" y="500" dominant-baseline="middle" text-anchor="middle">S3</text>
+<path d="M1000 450 q -300 -180 -600 0" fill="none" stroke="black" stroke-width="2" /><text x="700" y="350" dominant-baseline="middle" text-anchor="middle">Add</text>
+<path d="M1000 550 q -150 50 -300 0" fill="none" stroke="black" stroke-width="2" /><text x="850" y="585" dominant-baseline="middle" text-anchor="middle">Subtract</text>
+<circle cx="1300" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="1300" y="500" dominant-baseline="middle" text-anchor="middle">S4</text>
+<circle cx="1600" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="1600" y="500" dominant-baseline="middle" text-anchor="middle">S5</text>
+<path d="M1600 550 q 450 150 900 0" fill="none" stroke="black" stroke-width="2" /><text x="2050" y="635" dominant-baseline="middle" text-anchor="middle">Multiply [Mark-Type], Divide [Mark-Type]</text>
+<circle cx="1900" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="1900" y="500" dominant-baseline="middle" text-anchor="middle">S6</text>
+<path d="M1900 450 q 450 -270 900 0" fill="none" stroke="black" stroke-width="2" /><text x="2350" y="305" dominant-baseline="middle" text-anchor="middle">Int [Return], Float [Return], Add [Return], Subtract [Return], Multiply [Return], Divide [Return], Open [Return], Close [Return]</text>
+<circle cx="2200" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="2200" y="500" dominant-baseline="middle" text-anchor="middle">S7</text>
+<path d="M2200 450 q 300 -180 600 0" fill="none" stroke="black" stroke-width="2" /><text x="2500" y="350" dominant-baseline="middle" text-anchor="middle">Int [Return], Float [Return], Add [Return], Subtract [Return], Multiply [Return], Divide [Return], Open [Return], Close [Return]</text>
+<circle cx="2500" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="2500" y="500" dominant-baseline="middle" text-anchor="middle">S8</text>
+<path d="M2500 550 q -300 100 -600 0" fill="none" stroke="black" stroke-width="2" /><text x="2200" y="610" dominant-baseline="middle" text-anchor="middle">Multiply</text>
+<path d="M2500 450 q -150 -90 -300 0" fill="none" stroke="black" stroke-width="2" /><text x="2350" y="395" dominant-baseline="middle" text-anchor="middle">Divide</text>
+<circle cx="2800" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="2800" y="500" dominant-baseline="middle" text-anchor="middle">S9</text>
+<circle cx="3100" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="3100" y="500" dominant-baseline="middle" text-anchor="middle">S10</text>
+<path d="M3100 450 q 1050 -630 2100 0" fill="none" stroke="black" stroke-width="2" /><text x="4150" y="125" dominant-baseline="middle" text-anchor="middle">Int [Mark-Type], Float [Mark-Type], Open [Mark-Type]</text>
+<circle cx="3400" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="3400" y="500" dominant-baseline="middle" text-anchor="middle">S11</text>
+<path d="M3400 550 q 1050 350 2100 0" fill="none" stroke="black" stroke-width="2" /><text x="4450" y="735" dominant-baseline="middle" text-anchor="middle">Int [Return], Float [Return], Add [Return], Subtract [Return], Multiply [Return], Divide [Return], Open [Return], Close [Return]</text>
+<circle cx="3700" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="3700" y="500" dominant-baseline="middle" text-anchor="middle">S12</text>
+<path d="M3700 550 q 900 300 1800 0" fill="none" stroke="black" stroke-width="2" /><text x="4600" y="710" dominant-baseline="middle" text-anchor="middle">Int [Return], Float [Return], Add [Return], Subtract [Return], Multiply [Return], Divide [Return], Open [Return], Close [Return]</text>
+<circle cx="4000" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="4000" y="500" dominant-baseline="middle" text-anchor="middle">S13</text>
+<path d="M4000 550 q -1350 450 -2700 0" fill="none" stroke="black" stroke-width="2" /><text x="2650" y="785" dominant-baseline="middle" text-anchor="middle">Int, Float, Open</text>
+<path d="M4000 550 q 150 50 300 0" fill="none" stroke="black" stroke-width="2" /><text x="4150" y="585" dominant-baseline="middle" text-anchor="middle">Int [Call], Float [Call], Open [Call]</text>
+<circle cx="4300" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="4300" y="500" dominant-baseline="middle" text-anchor="middle">S14</text>
+<path d="M4300 450 q 150 -90 300 0" fill="none" stroke="black" stroke-width="2" /><text x="4450" y="395" dominant-baseline="middle" text-anchor="middle">Int [Push-Sub], Float [Push-Sub], Add [Push-Sub], Subtract [Push-Sub], Multiply [Push-Sub], Divide [Push-Sub], Open [Push-Sub], Close [Push-Sub]</text>
+<circle cx="4600" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="4600" y="500" dominant-baseline="middle" text-anchor="middle">S15</text>
+<path d="M4600 550 q 150 50 300 0" fill="none" stroke="black" stroke-width="2" /><text x="4750" y="585" dominant-baseline="middle" text-anchor="middle">Close</text>
+<circle cx="4900" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="4900" y="500" dominant-baseline="middle" text-anchor="middle">S16</text>
+<path d="M4900 550 q 300 100 600 0" fill="none" stroke="black" stroke-width="2" /><text x="5200" y="610" dominant-baseline="middle" text-anchor="middle">Int [Return], Float [Return], Add [Return], Subtract [Return], Multiply [Return], Divide [Return], Open [Return], Close [Return]</text>
+<circle cx="5200" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="5200" y="500" dominant-baseline="middle" text-anchor="middle">S17</text>
+<path d="M5200 450 q -900 -540 -1800 0" fill="none" stroke="black" stroke-width="2" /><text x="4300" y="170" dominant-baseline="middle" text-anchor="middle">Int [Set]</text>
+<path d="M5200 550 q -750 250 -1500 0" fill="none" stroke="black" stroke-width="2" /><text x="4450" y="685" dominant-baseline="middle" text-anchor="middle">Float [Set]</text>
+<path d="M5200 450 q -600 -360 -1200 0" fill="none" stroke="black" stroke-width="2" /><text x="4600" y="260" dominant-baseline="middle" text-anchor="middle">Open</text>
+<circle cx="5500" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="5500" y="500" dominant-baseline="middle" text-anchor="middle">S18</text>
+<circle cx="5800" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="5800" y="500" dominant-baseline="middle" text-anchor="middle">S19</text>
+<path d="M5800 550 q -2550 850 -5100 0" fill="none" stroke="black" stroke-width="2" /><text x="3250" y="985" dominant-baseline="middle" text-anchor="middle">Int, Float, Open</text>
+<path d="M5800 550 q 150 50 300 0" fill="none" stroke="black" stroke-width="2" /><text x="5950" y="585" dominant-baseline="middle" text-anchor="middle">Int [Call], Float [Call], Open [Call]</text>
+<circle cx="6100" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="6100" y="500" dominant-baseline="middle" text-anchor="middle">S20</text>
+<path d="M6100 450 q 150 -90 300 0" fill="none" stroke="black" stroke-width="2" /><text x="6250" y="395" dominant-baseline="middle" text-anchor="middle">Int [Push-Sub], Float [Push-Sub], Add [Push-Sub], Subtract [Push-Sub], Multiply [Push-Sub], Divide [Push-Sub], Open [Push-Sub], Close [Push-Sub]</text>
+<circle cx="6400" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="6400" y="500" dominant-baseline="middle" text-anchor="middle">S21</text>
+<path d="M6400 550 q 150 50 300 0" fill="none" stroke="black" stroke-width="2" /><text x="6550" y="585" dominant-baseline="middle" text-anchor="middle">Int [Set-Flag], Float [Set-Flag], Add [Set-Flag], Subtract [Set-Flag], Multiply [Set-Flag], Divide [Set-Flag], Open [Set-Flag], Close [Set-Flag]</text>
+<circle cx="6700" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="6700" y="500" dominant-baseline="middle" text-anchor="middle">S22</text>
+<path d="M6700 450 q -3150 -1890 -6300 0" fill="none" stroke="black" stroke-width="2" /><text x="3550" y="-505" dominant-baseline="middle" text-anchor="middle">Multiply, Divide</text>
+<path d="M6700 450 q 150 -90 300 0" fill="none" stroke="black" stroke-width="2" /><text x="6850" y="395" dominant-baseline="middle" text-anchor="middle">Int [Unset-Flag], Float [Unset-Flag], Add [Unset-Flag], Subtract [Unset-Flag], Open [Unset-Flag], Close [Unset-Flag]</text>
+<path d="M6700 550 q 300 100 600 0" fill="none" stroke="black" stroke-width="2" /><text x="7000" y="610" dominant-baseline="middle" text-anchor="middle">Multiply [Call], Divide [Call]</text>
+<circle cx="7000" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="7000" y="500" dominant-baseline="middle" text-anchor="middle">S23</text>
+<path d="M7000 550 q 750 250 1500 0" fill="none" stroke="black" stroke-width="2" /><text x="7750" y="685" dominant-baseline="middle" text-anchor="middle">Int [Return], Float [Return], Add [Return], Subtract [Return], Multiply [Return], Divide [Return], Open [Return], Close [Return]</text>
+<circle cx="7300" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="7300" y="500" dominant-baseline="middle" text-anchor="middle">S24</text>
+<path d="M7300 450 q 150 -90 300 0" fill="none" stroke="black" stroke-width="2" /><text x="7450" y="395" dominant-baseline="middle" text-anchor="middle">Int [Push-Sub], Float [Push-Sub], Add [Push-Sub], Subtract [Push-Sub], Multiply [Push-Sub], Divide [Push-Sub], Open [Push-Sub], Close [Push-Sub]</text>
+<circle cx="7600" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="7600" y="500" dominant-baseline="middle" text-anchor="middle">S25</text>
+<path d="M7600 450 q -3300 -1980 -6600 0" fill="none" stroke="black" stroke-width="2" /><text x="4300" y="-550" dominant-baseline="middle" text-anchor="middle">Int, Float, Open</text>
+<path d="M7600 550 q 150 50 300 0" fill="none" stroke="black" stroke-width="2" /><text x="7750" y="585" dominant-baseline="middle" text-anchor="middle">Int [Call], Float [Call], Open [Call]</text>
+<circle cx="7900" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="7900" y="500" dominant-baseline="middle" text-anchor="middle">S26</text>
+<path d="M7900 450 q 150 -90 300 0" fill="none" stroke="black" stroke-width="2" /><text x="8050" y="395" dominant-baseline="middle" text-anchor="middle">Int [Push-Sub], Float [Push-Sub], Add [Push-Sub], Subtract [Push-Sub], Multiply [Push-Sub], Divide [Push-Sub], Open [Push-Sub], Close [Push-Sub]</text>
+<circle cx="8200" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="8200" y="500" dominant-baseline="middle" text-anchor="middle">S27</text>
+<path d="M8200 550 q 150 50 300 0" fill="none" stroke="black" stroke-width="2" /><text x="8350" y="585" dominant-baseline="middle" text-anchor="middle">Int [Return], Float [Return], Add [Return], Subtract [Return], Multiply [Return], Divide [Return], Open [Return], Close [Return]</text>
+<circle cx="8500" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="8500" y="500" dominant-baseline="middle" text-anchor="middle">S28</text>
+<circle cx="8800" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="8800" y="500" dominant-baseline="middle" text-anchor="middle">S29</text>
+<path d="M8800 450 q -3900 -2340 -7800 0" fill="none" stroke="black" stroke-width="2" /><text x="4900" y="-730" dominant-baseline="middle" text-anchor="middle">Int, Float, Open</text>
+<path d="M8800 550 q 150 50 300 0" fill="none" stroke="black" stroke-width="2" /><text x="8950" y="585" dominant-baseline="middle" text-anchor="middle">Int [Call], Float [Call], Open [Call]</text>
+<circle cx="9100" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="9100" y="500" dominant-baseline="middle" text-anchor="middle">S30</text>
+<path d="M9100 450 q 150 -90 300 0" fill="none" stroke="black" stroke-width="2" /><text x="9250" y="395" dominant-baseline="middle" text-anchor="middle">Int [Push-Sub], Float [Push-Sub], Add [Push-Sub], Subtract [Push-Sub], Multiply [Push-Sub], Divide [Push-Sub], Open [Push-Sub], Close [Push-Sub]</text>
+<circle cx="9400" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="9400" y="500" dominant-baseline="middle" text-anchor="middle">S31</text>
+<path d="M9400 550 q 150 50 300 0" fill="none" stroke="black" stroke-width="2" /><text x="9550" y="585" dominant-baseline="middle" text-anchor="middle">Int [Set-Flag], Float [Set-Flag], Add [Set-Flag], Subtract [Set-Flag], Multiply [Set-Flag], Divide [Set-Flag], Open [Set-Flag], Close [Set-Flag]</text>
+<circle cx="9700" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="9700" y="500" dominant-baseline="middle" text-anchor="middle">S32</text>
+<path d="M9700 550 q -4800 1600 -9600 0" fill="none" stroke="black" stroke-width="2" /><text x="4900" y="1360" dominant-baseline="middle" text-anchor="middle">Add, Subtract</text>
+<path d="M9700 450 q 150 -90 300 0" fill="none" stroke="black" stroke-width="2" /><text x="9850" y="395" dominant-baseline="middle" text-anchor="middle">Int [Unset-Flag], Float [Unset-Flag], Multiply [Unset-Flag], Divide [Unset-Flag], Open [Unset-Flag], Close [Unset-Flag]</text>
+<path d="M9700 550 q 300 100 600 0" fill="none" stroke="black" stroke-width="2" /><text x="10000" y="610" dominant-baseline="middle" text-anchor="middle">Add [Call], Subtract [Call]</text>
+<circle cx="10000" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="10000" y="500" dominant-baseline="middle" text-anchor="middle">S33</text>
+<path d="M10000 550 q 750 250 1500 0" fill="none" stroke="black" stroke-width="2" /><text x="10750" y="685" dominant-baseline="middle" text-anchor="middle">Int [Return], Float [Return], Add [Return], Subtract [Return], Multiply [Return], Divide [Return], Open [Return], Close [Return]</text>
+<circle cx="10300" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="10300" y="500" dominant-baseline="middle" text-anchor="middle">S34</text>
+<path d="M10300 450 q 150 -90 300 0" fill="none" stroke="black" stroke-width="2" /><text x="10450" y="395" dominant-baseline="middle" text-anchor="middle">Int [Push-Sub], Float [Push-Sub], Add [Push-Sub], Subtract [Push-Sub], Multiply [Push-Sub], Divide [Push-Sub], Open [Push-Sub], Close [Push-Sub]</text>
+<circle cx="10600" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="10600" y="500" dominant-baseline="middle" text-anchor="middle">S35</text>
+<path d="M10600 550 q -4650 1550 -9300 0" fill="none" stroke="black" stroke-width="2" /><text x="5950" y="1335" dominant-baseline="middle" text-anchor="middle">Int, Float, Open</text>
+<path d="M10600 550 q 150 50 300 0" fill="none" stroke="black" stroke-width="2" /><text x="10750" y="585" dominant-baseline="middle" text-anchor="middle">Int [Call], Float [Call], Open [Call]</text>
+<circle cx="10900" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="10900" y="500" dominant-baseline="middle" text-anchor="middle">S36</text>
+<path d="M10900 450 q 150 -90 300 0" fill="none" stroke="black" stroke-width="2" /><text x="11050" y="395" dominant-baseline="middle" text-anchor="middle">Int [Push-Sub], Float [Push-Sub], Add [Push-Sub], Subtract [Push-Sub], Multiply [Push-Sub], Divide [Push-Sub], Open [Push-Sub], Close [Push-Sub]</text>
+<circle cx="11200" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="11200" y="500" dominant-baseline="middle" text-anchor="middle">S37</text>
+<path d="M11200 550 q 150 50 300 0" fill="none" stroke="black" stroke-width="2" /><text x="11350" y="585" dominant-baseline="middle" text-anchor="middle">Int [Return], Float [Return], Add [Return], Subtract [Return], Multiply [Return], Divide [Return], Open [Return], Close [Return]</text>
+<circle cx="11500" cy="500" r="50" stroke="black" stroke-width="2" fill="white"/>
+<text x="11500" y="500" dominant-baseline="middle" text-anchor="middle">S38</text>
 </svg>

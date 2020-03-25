@@ -50,8 +50,8 @@ typedef struct _Document
     void *root;
 } Document;
 
-void tinyparse_debug_table();
-Document tinyparse_parse(LexerStream *lex);
-void tinyparse_free_document(Document *doc);
+void DEBUG_TABLE_NAME();
+Document PARSE_NAME(LexerStream *lex);
+void FREE_DOCUMENT_NAME(Document *doc);
 
 #endif // TINYPARSE_H

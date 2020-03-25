@@ -50,16 +50,22 @@ typedef struct _Document
     void *root;
 } Document;
 
-void tinyparse_debug_table();
-Document tinyparse_parse(LexerStream *lex);
-void tinyparse_free_document(Document *doc);
+void DEBUG_TABLE_NAME();
+Document PARSE_NAME(LexerStream *lex);
+void FREE_DOCUMENT_NAME(Document *doc);
 
 #endif // TINYPARSE_H
 
 #ifndef TINYPARSER_H
 #define TINYPARSER_H
 
+#define DEBUG_TABLE_NAME testproject_debug_table
+#define PARSE_NAME	testproject_parse
+#define FREE_DOCUMENT_NAME	testproject_free_document
 typedef struct _AddOpNode AddOpNode;
+typedef struct _MulOpNode MulOpNode;
+typedef struct _TermNode TermNode;
+typedef struct _FactorNode FactorNode;
 typedef struct _FunctionNode FunctionNode;
 
 struct _AddOpNode
@@ -73,59 +79,147 @@ struct _AddOpNode
 	};
 };
 
+struct _MulOpNode
+{
+	struct 
+	{
+		int type;
+		union
+		{
+		};
+	};
+};
+
+struct _TermNode
+{
+	struct 
+	{
+		int type;
+		union
+		{
+			Token i;
+			Token f;
+			struct 
+			{
+				FunctionNode *sub;
+			};
+		};
+	};
+};
+
+struct _FactorNode
+{
+	struct 
+	{
+		TermNode *left;
+		int has_next;
+		struct 
+		{
+			MulOpNode *op;
+			FactorNode *next;
+		};
+	};
+};
+
 struct _FunctionNode
 {
 	struct 
 	{
-		Token left;
-		int has_right;
+		FactorNode *left;
+		int has_next;
 		struct 
 		{
-			FunctionNode *right;
+			AddOpNode *op;
+			FunctionNode *next;
 		};
 	};
 };
 
 #endif // TINYPARSER_H
 
-#ifdef TINYPARSE_IMPLEMENT
-static int command_flags[] = {16, 4413976, 8, 0, 1, -16496, 32, 2121136, 64, 1, 4, 0, 4, 1, 2, 1, 8, 0, };
+#ifdef TESTPROJECT_IMPLEMENT
+static int command_flags[] = {16, 4357344, 8, 0, 16, 4357344, 8, 0, 1, -19120, 1, -19120, 4, 4, 2, 4, 16, 0, 8, 0, 4, 2, 2, 2, 32, 2123744, 64, 2, 4, 1, 2, 1, 4, 3, 2, 3, 8, 4234722, 4, 3, 2, 3, 32, 2123744, 64, 2, 4, 0, 2, 0, 4, 4, 2, 4, 8, 4234722, };
 #define EXEC_COMMAND(command) \
 { \
 	switch(command) \
 	{ \
 		case 0: ((AddOpNode*)(value + value_pointer))->type = lex->look.type;ignore_flag = 1;printf("Mark type, "); break; \
 		case 1: value_pointer = call_stack[--call_stack_pointer];state = call_stack[--call_stack_pointer];ignore_flag = 1;printf("Return to: %i, ", state); break; \
-		case 2: ((FunctionNode*)(value + value_pointer))->left = lex->look; break; \
-		case 3: ((FunctionNode*)(value + value_pointer))->has_right = 1;ignore_flag = 1;printf("Set flag, "); break; \
-		case 4: ((FunctionNode*)(value + value_pointer))->has_right = 0;ignore_flag = 1;printf("Unset flag, "); break; \
-		case 5: call_stack[call_stack_pointer++] = state;call_stack[call_stack_pointer++] = value_pointer;state = 0;value_pointer += sizeof(FunctionNode);ignore_flag = 1;printf("Call AddOp, "); break; \
-		case 6: call_stack[call_stack_pointer++] = state;call_stack[call_stack_pointer++] = value_pointer;state = 5;value_pointer += sizeof(FunctionNode);ignore_flag = 1;printf("Call Function, "); break; \
-		case 7: ((FunctionNode*)(value + value_pointer))->right = push(&alloc, value + value_pointer + sizeof(FunctionNode), sizeof(FunctionNode));ignore_flag = 1; break; \
-		case 8: value_pointer = call_stack[--call_stack_pointer];state = call_stack[--call_stack_pointer];ignore_flag = 1;printf("Return to: %i, ", state); break; \
+		case 2: ((MulOpNode*)(value + value_pointer))->type = lex->look.type;ignore_flag = 1;printf("Mark type, "); break; \
+		case 3: value_pointer = call_stack[--call_stack_pointer];state = call_stack[--call_stack_pointer];ignore_flag = 1;printf("Return to: %i, ", state); break; \
+		case 4: ((TermNode*)(value + value_pointer))->i = lex->look; break; \
+		case 5: ((TermNode*)(value + value_pointer))->f = lex->look; break; \
+		case 6: call_stack[call_stack_pointer++] = state;call_stack[call_stack_pointer++] = value_pointer;state = 29;value_pointer += sizeof(TermNode);ignore_flag = 1;printf("Call Function, "); break; \
+		case 7: ((TermNode*)(value + value_pointer))->sub = push(&alloc, value + value_pointer + sizeof(TermNode), sizeof(FunctionNode));ignore_flag = 1; break; \
+		case 8: ((TermNode*)(value + value_pointer))->type = lex->look.type;ignore_flag = 1;printf("Mark type, "); break; \
+		case 9: value_pointer = call_stack[--call_stack_pointer];state = call_stack[--call_stack_pointer];ignore_flag = 1;printf("Return to: %i, ", state); break; \
+		case 10: call_stack[call_stack_pointer++] = state;call_stack[call_stack_pointer++] = value_pointer;state = 10;value_pointer += sizeof(FactorNode);ignore_flag = 1;printf("Call Term, "); break; \
+		case 11: ((FactorNode*)(value + value_pointer))->left = push(&alloc, value + value_pointer + sizeof(FactorNode), sizeof(TermNode));ignore_flag = 1; break; \
+		case 12: ((FactorNode*)(value + value_pointer))->has_next = 1;ignore_flag = 1;printf("Set flag, "); break; \
+		case 13: ((FactorNode*)(value + value_pointer))->has_next = 0;ignore_flag = 1;printf("Unset flag, "); break; \
+		case 14: call_stack[call_stack_pointer++] = state;call_stack[call_stack_pointer++] = value_pointer;state = 5;value_pointer += sizeof(FactorNode);ignore_flag = 1;printf("Call MulOp, "); break; \
+		case 15: ((FactorNode*)(value + value_pointer))->op = push(&alloc, value + value_pointer + sizeof(FactorNode), sizeof(MulOpNode));ignore_flag = 1; break; \
+		case 16: call_stack[call_stack_pointer++] = state;call_stack[call_stack_pointer++] = value_pointer;state = 19;value_pointer += sizeof(FactorNode);ignore_flag = 1;printf("Call Factor, "); break; \
+		case 17: ((FactorNode*)(value + value_pointer))->next = push(&alloc, value + value_pointer + sizeof(FactorNode), sizeof(FactorNode));ignore_flag = 1; break; \
+		case 18: value_pointer = call_stack[--call_stack_pointer];state = call_stack[--call_stack_pointer];ignore_flag = 1;printf("Return to: %i, ", state); break; \
+		case 19: call_stack[call_stack_pointer++] = state;call_stack[call_stack_pointer++] = value_pointer;state = 19;value_pointer += sizeof(FunctionNode);ignore_flag = 1;printf("Call Factor, "); break; \
+		case 20: ((FunctionNode*)(value + value_pointer))->left = push(&alloc, value + value_pointer + sizeof(FunctionNode), sizeof(FactorNode));ignore_flag = 1; break; \
+		case 21: ((FunctionNode*)(value + value_pointer))->has_next = 1;ignore_flag = 1;printf("Set flag, "); break; \
+		case 22: ((FunctionNode*)(value + value_pointer))->has_next = 0;ignore_flag = 1;printf("Unset flag, "); break; \
+		case 23: call_stack[call_stack_pointer++] = state;call_stack[call_stack_pointer++] = value_pointer;state = 0;value_pointer += sizeof(FunctionNode);ignore_flag = 1;printf("Call AddOp, "); break; \
+		case 24: ((FunctionNode*)(value + value_pointer))->op = push(&alloc, value + value_pointer + sizeof(FunctionNode), sizeof(AddOpNode));ignore_flag = 1; break; \
+		case 25: call_stack[call_stack_pointer++] = state;call_stack[call_stack_pointer++] = value_pointer;state = 29;value_pointer += sizeof(FunctionNode);ignore_flag = 1;printf("Call Function, "); break; \
+		case 26: ((FunctionNode*)(value + value_pointer))->next = push(&alloc, value + value_pointer + sizeof(FunctionNode), sizeof(FunctionNode));ignore_flag = 1; break; \
+		case 27: value_pointer = call_stack[--call_stack_pointer];state = call_stack[--call_stack_pointer];ignore_flag = 1;printf("Return to: %i, ", state); break; \
 	} \
 }
 
-#define TABLE_WIDTH 6
-#define TABLE_SIZE 13
-#define ENTRY_POINT 5
+#define TABLE_WIDTH 16
+#define TABLE_SIZE 39
+#define ENTRY_POINT 29
 #define LEXER_NEXT testproject_next
 
 static char parser_table[] = 
 {
-	1, 0, 1, 0, 1, 0, 
-	-1, -1, 2, -1, 3, -1, 
-	4, 1, 4, 1, 4, 1, 
-	4, 1, 4, 1, 4, 1, 
-	-1, -1, -1, -1, -1, -1, 
-	6, 2, -1, -1, -1, -1, 
-	7, 3, 7, 3, 7, 3, 
-	9, 5, 9, 5, 9, 5, 
-	12, 8, 12, 8, 12, 8, 
-	10, 6, -1, -1, -1, -1, 
-	11, 7, 11, 7, 11, 7, 
-	12, 8, 12, 8, 12, 8, 
-	-1, -1, -1, -1, -1, -1, 
+	-1, -1, -1, -1, 3, 0, 3, 0, -1, -1, -1, -1, -1, -1, -1, -1, 
+	4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 
+	4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 
+	-1, -1, -1, -1, 1, -1, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+	-1, -1, -1, -1, -1, -1, -1, -1, 8, 2, 8, 2, -1, -1, -1, -1, 
+	9, 3, 9, 3, 9, 3, 9, 3, 9, 3, 9, 3, 9, 3, 9, 3, 
+	9, 3, 9, 3, 9, 3, 9, 3, 9, 3, 9, 3, 9, 3, 9, 3, 
+	-1, -1, -1, -1, -1, -1, -1, -1, 6, -1, 7, -1, -1, -1, -1, -1, 
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+	17, 8, 17, 8, -1, -1, -1, -1, -1, -1, -1, -1, 17, 8, -1, -1, 
+	18, 9, 18, 9, 18, 9, 18, 9, 18, 9, 18, 9, 18, 9, 18, 9, 
+	18, 9, 18, 9, 18, 9, 18, 9, 18, 9, 18, 9, 18, 9, 18, 9, 
+	14, 6, 14, 6, -1, -1, -1, -1, -1, -1, -1, -1, 14, 6, -1, -1, 
+	15, 7, 15, 7, 15, 7, 15, 7, 15, 7, 15, 7, 15, 7, 15, 7, 
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 16, -1, 
+	18, 9, 18, 9, 18, 9, 18, 9, 18, 9, 18, 9, 18, 9, 18, 9, 
+	11, 4, 12, 5, -1, -1, -1, -1, -1, -1, -1, -1, 13, -1, -1, -1, 
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+	20, 10, 20, 10, -1, -1, -1, -1, -1, -1, -1, -1, 20, 10, -1, -1, 
+	21, 11, 21, 11, 21, 11, 21, 11, 21, 11, 21, 11, 21, 11, 21, 11, 
+	22, 12, 22, 12, 22, 12, 22, 12, 22, 12, 22, 12, 22, 12, 22, 12, 
+	23, 13, 23, 13, 23, 13, 23, 13, 24, 14, 24, 14, 23, 13, 23, 13, 
+	28, 18, 28, 18, 28, 18, 28, 18, 28, 18, 28, 18, 28, 18, 28, 18, 
+	25, 15, 25, 15, 25, 15, 25, 15, 25, 15, 25, 15, 25, 15, 25, 15, 
+	26, 16, 26, 16, -1, -1, -1, -1, -1, -1, -1, -1, 26, 16, -1, -1, 
+	27, 17, 27, 17, 27, 17, 27, 17, 27, 17, 27, 17, 27, 17, 27, 17, 
+	28, 18, 28, 18, 28, 18, 28, 18, 28, 18, 28, 18, 28, 18, 28, 18, 
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+	30, 19, 30, 19, -1, -1, -1, -1, -1, -1, -1, -1, 30, 19, -1, -1, 
+	31, 20, 31, 20, 31, 20, 31, 20, 31, 20, 31, 20, 31, 20, 31, 20, 
+	32, 21, 32, 21, 32, 21, 32, 21, 32, 21, 32, 21, 32, 21, 32, 21, 
+	33, 22, 33, 22, 34, 23, 34, 23, 33, 22, 33, 22, 33, 22, 33, 22, 
+	38, 27, 38, 27, 38, 27, 38, 27, 38, 27, 38, 27, 38, 27, 38, 27, 
+	35, 24, 35, 24, 35, 24, 35, 24, 35, 24, 35, 24, 35, 24, 35, 24, 
+	36, 25, 36, 25, -1, -1, -1, -1, -1, -1, -1, -1, 36, 25, -1, -1, 
+	37, 26, 37, 26, 37, 26, 37, 26, 37, 26, 37, 26, 37, 26, 37, 26, 
+	38, 27, 38, 27, 38, 27, 38, 27, 38, 27, 38, 27, 38, 27, 38, 27, 
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
 };
 
 #include <stdio.h>
@@ -225,7 +319,7 @@ static void free_allocator(
     free_memory_list(alloc->memory);
 }
 
-void tinyparse_debug_table()
+void DUBUG_TABLE_NAME()
 {
     int i, j;
 
@@ -247,7 +341,7 @@ void tinyparse_debug_table()
     }
 }
 
-Document tinyparse_parse(
+Document PARSE_NAME(
     LexerStream *lex)
 {
     // State
@@ -314,11 +408,11 @@ Document tinyparse_parse(
     return doc;
 }
 
-void tinyparse_free_document(
+void FREE_DOCUMENT_NAME(
     Document *doc)
 {
     free_memory_list(doc->memory);
     free(doc->root);
 }
 
-#endif // TINYPARSE_IMPLEMENT
+#endif // TESTPROJECT_IMPLEMENT

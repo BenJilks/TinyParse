@@ -19,12 +19,21 @@ add_custom_command(TARGET template_files
 add_dependencies(template_files template)
 
 add_custom_command(OUTPUT source/lex.tinylex
-    COMMAND tinylex source/lex.tinylex -o include/tinylex.h -l c
+    COMMAND 
+		tinylex source/lex.tinylex -o include/tinylex.h -l c
     COMMENT "Generating lexer"
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )
+add_custom_command(OUTPUT source/tinylex_intergration.tinylex
+    COMMAND 
+		tinylex source/tinylex_intergration.tinylex -o include/tinylex_intergration_lexer.h -l c
+    COMMENT "Generating tinylex intergration lexer"
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+)
+
+
 add_custom_target(tinylex 
-    DEPENDS source/lex.tinylex
+    DEPENDS source/lex.tinylex source/tinylex_intergration.tinylex
 )
 
 add_executable(tinyparse ${all_SRCS})

@@ -262,7 +262,43 @@ static EndingStates compile_value(
 
 #define MAX(a, b) (a) > (b) ? (a) : (b)
 
-static EndingStates mark_type(
+static void insert_state(
+	FSM *fsm,
+	Parser *parser,
+	int ins_state,
+	int ins_command,
+	EndingStates from)
+{
+	int i, j;
+	int ins_index;
+
+	ins_index = ins_state * parser->table_width;
+	for (i = 0; i < from.count; i++)
+	{
+		int from_state;
+		int og_index;
+		
+		from_state = from.states[i];
+		og_index = from_state * parser->table_width;
+		for (j = 0; j < parser->table_width; j+=2)
+		{
+			int og_transition;
+			int og_command;
+
+			og_transition = fsm->table[og_index + j];
+			og_command = fsm->table[og_index + j + 1];
+			if (og_transition != -1)
+			{
+				fsm->table[og_index + j + 0] = ins_state;
+				fsm->table[og_index + j + 1] = ins_command;
+				fsm->table[ins_index + j + 0] = og_transition;
+				fsm->table[ins_index + j + 1] = og_command;
+			}
+		}
+	}
+}
+
+static void mark_type(
     FSM *fsm,
     Parser *parser,
     Token label,
@@ -270,7 +306,6 @@ static EndingStates mark_type(
 {
     int command_id;
     int type_state;
-    EndingStates endings;
 
     // Create command and state
     command_id = new_command(fsm, 
@@ -278,13 +313,8 @@ static EndingStates mark_type(
     type_state = new_state(fsm, parser);
 
     // Create transitions
-    create_all_transition(fsm, parser, 
-        type_state, command_id, from);
-    
-    // Make from this new state
-    endings.count = 1;
-    endings.states[0] = type_state;
-    return endings;
+	insert_state(fsm, parser, 
+		type_state, command_id, from);
 }
 
 static EndingStates compile_or(
@@ -299,11 +329,6 @@ static EndingStates compile_or(
 
     LOG("If =>\n");
     debug_start_scope();
-
-    // If there's a type label, create 
-    // a command node to mark the type
-    if (node->has_label)
-        from = mark_type(fsm, parser, node->label, from);
 
     // Set up ending data
     endings.count = 0;
@@ -325,6 +350,11 @@ static EndingStates compile_or(
         // Increment total size and move to the next branch
         curr = curr->next;
     }
+
+    // If there's a type label, create 
+    // a command node to mark the type
+    if (node->has_label)
+        mark_type(fsm, parser, node->label, from);
 
     debug_end_scope();
     return endings;

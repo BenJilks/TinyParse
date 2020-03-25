@@ -96,7 +96,7 @@ static void free_allocator(
     free_memory_list(alloc->memory);
 }
 
-void tinyparse_debug_table()
+void DUBUG_TABLE_NAME()
 {
     int i, j;
 
@@ -118,7 +118,7 @@ void tinyparse_debug_table()
     }
 }
 
-Document tinyparse_parse(
+Document PARSE_NAME(
     LexerStream *lex)
 {
     // State
@@ -185,7 +185,7 @@ Document tinyparse_parse(
     return doc;
 }
 
-void tinyparse_free_document(
+void FREE_DOCUMENT_NAME(
     Document *doc)
 {
     free_memory_list(doc->memory);

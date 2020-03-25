@@ -24,6 +24,26 @@
     fprintf(output, __VA_ARGS__); \
 }
 
+typedef int (*func_t)(int);
+
+static char *str_convert(
+    char *str, func_t func)
+{
+    int len, i;
+    char *out;
+
+    len = strlen(str);
+    out = malloc(len + 1);
+    out[len] = '\0';
+
+    for (i = 0; i < len; i++)
+        out[i] = func(str[i]);
+    return out;
+}
+
+static char *to_lower(char *str) { return str_convert(str, tolower); }
+static char *to_upper(char *str) { return str_convert(str, toupper); }
+
 static void output_tabs(
     FILE *output, 
     int tab)
@@ -37,7 +57,15 @@ static void generate_headers(
     FILE *output, 
     Parser *parser)
 {
+	char *name_lower;
+
+	name_lower = to_lower(parser->project_name);
     fprintf(output, "\n");
+	fprintf(output, "#define DEBUG_TABLE_NAME %s_debug_table\n", name_lower);
+	fprintf(output, "#define PARSE_NAME	%s_parse\n", name_lower);
+	fprintf(output, "#define FREE_DOCUMENT_NAME	%s_free_document\n", name_lower);
+	free(name_lower);
+
     FOR_EACH_RULE(rule, name,
     {
         fprintf(output, "typedef struct _%sNode %sNode;\n", 
@@ -317,21 +345,6 @@ static void generate_commands(
     fprintf(output, "}\n");
 }
 
-char *to_lower(
-    char *str)
-{
-    int len, i;
-    char *out;
-
-    len = strlen(str);
-    out = malloc(len + 1);
-    out[len] = '\0';
-
-    for (i = 0; i < len; i++)
-        out[i] = tolower(str[i]);
-    return out;
-}
-
 void generate_implement(
     FILE* output,
     LexerStream *lex,
@@ -368,6 +381,7 @@ void generate_c(
     LexerStream *lex,
     Parser *parser)
 {
+	char *name_upper;
     fputs(template_c_header, output);
 
     fprintf(output, "\n#ifndef TINYPARSER_H\n");
@@ -376,8 +390,9 @@ void generate_c(
     generate_data_types(output, lex, parser);
     fprintf(output, "\n#endif // TINYPARSER_H\n");
 
-    fprintf(output, "\n#ifdef TINYPARSE_IMPLEMENT\n");
+	name_upper = to_upper(parser->project_name);
+    fprintf(output, "\n#ifdef %s_IMPLEMENT\n", name_upper);
     generate_commands(output, lex, parser);
     generate_implement(output, lex, parser);
-    fprintf(output, "\n#endif // TINYPARSE_IMPLEMENT\n");
+    fprintf(output, "\n#endif // %s_IMPLEMENT\n", name_upper);
 }

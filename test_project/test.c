@@ -77,7 +77,7 @@ void find_groups(
 
 #define PRINT_FLAG(flag, name) \
 { \
-    if (command & flag) \
+    if (command_flags[command*2] & flag) \
     { \
         if (!is_first) APPEND(label, ", "); \
         APPEND(label, name); \
@@ -148,7 +148,7 @@ void draw_transition(
     gap = abs(state_to - state_from);
     to_x = 100 + (state_distance * state_to);
     to_y = y + (top? -50 : 50);
-    arc = (top? 1 : -1) * gap * 100 + gap * 40;
+    arc = (top? 1 : -1) * gap * 70 + gap * 20;
     draw_path(file, 
         x, to_y, 
         to_x, to_y, 
@@ -202,7 +202,7 @@ void create_visual(
     fprintf(file, "<svg width=\"10000\" xmlns=\"http://www.w3.org/2000/svg\">\n");
     
     x = 100;
-    y = 350;
+    y = 500;
     for (i = 0; i < TABLE_SIZE; i++)
     {
         char name[80];
@@ -233,9 +233,9 @@ int main()
     create_visual("test.svg");
     lex = lexer_stream_open("test.txt");
     testproject_init(&lex);
-//    doc = tinyparse_parse(&lex);
+    doc = testproject_parse(&lex);
 
-//    tinyparse_free_document(&doc);
+	testproject_free_document(&doc);
     lexer_stream_close(&lex);
 
     return 0;
