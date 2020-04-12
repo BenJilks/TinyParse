@@ -1,0 +1,5 @@
+project Test
+define tinylexer sub_node_recursive.tinylex
+
+Entry		( test < Entry : next >? : has_next ) 
+

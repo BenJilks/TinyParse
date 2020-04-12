@@ -1,0 +1,6 @@
+project Test
+define tinylexer label_optional.tinylex
+
+Entry		( test func? : has_a for
+		  test func? : has_b for ) 
+

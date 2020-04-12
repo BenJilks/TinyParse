@@ -1,0 +1,5 @@
+project Test
+define tinylexer keywords.tinylex
+
+Entry		( for ) 
+

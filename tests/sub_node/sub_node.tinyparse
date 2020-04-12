@@ -1,0 +1,13 @@
+project Test
+define tinylexer sub_node.tinylex
+
+Keywords	( test func )
+Or		( test | func | if : type )
+Optional	( for func? : has_func )
+
+Entry		( < Keywords : keywords > 
+		  < Or : or_a >
+		  < Or : or_b > 
+		  < Optional : optional_a >
+		  < Optional : optional_b > ) 
+

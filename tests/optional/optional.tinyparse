@@ -1,0 +1,6 @@
+project Test
+define tinylexer optional.tinylex
+
+Entry		( test func? if
+		  test func? if ) 
+

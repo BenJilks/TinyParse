@@ -1,0 +1,10 @@
+project Test
+define tinylexer or.tinylex
+
+Entry		(   test
+		  | func 
+		  | for
+		  | if
+		  | TinyLex
+		  : type ) 
+
