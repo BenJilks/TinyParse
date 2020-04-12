@@ -2,6 +2,7 @@
 #include "c_header.h"
 #include "c_implement.h"
 #include "FSM.h"
+#include "debug.h"
 #include <ctype.h>
 
 #define FOR_EACH_RULE(item, name, do) \
@@ -242,7 +243,9 @@ static void generate_command_code(
             "= lex->look.type;", node, attr);
         fprintf(output, "ignore_flag = 1;");
 
+#if DEBUG
         fprintf(output, "printf(\"Mark type, \");");
+#endif
     }
 
     if (command.flags & FLAG_SET_FLAG)
@@ -252,7 +255,9 @@ static void generate_command_code(
             "= 1;", node, attr);
         fprintf(output, "ignore_flag = 1;");
 
+#if DEBUG
         fprintf(output, "printf(\"Set flag, \");");
+#endif
     }
 
     if (command.flags & FLAG_UNSET_FLAG)
@@ -262,7 +267,9 @@ static void generate_command_code(
             "= 0;", node, attr);
         fprintf(output, "ignore_flag = 1;");
 
+#if DEBUG
         fprintf(output, "printf(\"Unset flag, \");");
+#endif
     }
 
     if (command.flags & FLAG_NULL)
@@ -281,8 +288,10 @@ static void generate_command_code(
         fprintf(output, "value_pointer += sizeof(%sNode);", node);
         fprintf(output, "ignore_flag = 1;");
 
+#if DEBUG
         fprintf(output, "printf(\"Call %s, \");", 
             parser->rules[command.to_rule].name);
+#endif
     }
     
     if (command.flags & FLAG_SET)
@@ -308,7 +317,9 @@ static void generate_command_code(
         fprintf(output, "state = call_stack[--call_stack_pointer];");
         fprintf(output, "ignore_flag = 1;");
 
+#if DEBUG
         fputs("printf(\"Return to: %i, \", state);", output);
+#endif
     }
 }
 
@@ -355,6 +366,7 @@ void generate_implement(
 
     title_lower = to_lower(parser->project_name);
     fprintf(output, "\n#define TABLE_WIDTH %i\n", parser->table_width);
+    fprintf(output, "#define EOF_TYPE %i\n", parser->token_count - 1);
     fprintf(output, "#define TABLE_SIZE %i\n", parser->table_size);
     fprintf(output, "#define ENTRY_POINT %i\n", parser->entry_index);
     fprintf(output, "#define LEXER_NEXT %s_next\n", title_lower);

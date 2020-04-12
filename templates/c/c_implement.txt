@@ -11,6 +11,7 @@
 static char parser_table[] = {};
 #endif
 
+//#define DEBUG_TINYPARSE
 #define STATE_WIDTH 2
 #define ALLOCATION_BUFFER 1024
 
@@ -124,7 +125,7 @@ Document PARSE_NAME(
     // State
     int state;
     int next_state, next_commands;
-    int next_index;
+    int next_index, next_type;
     int call_command, value_stack_pointer;
     int ignore_flag;
 
@@ -147,12 +148,15 @@ Document PARSE_NAME(
     for (;;)
     {
         // Get next state
-        next_index = state * TABLE_WIDTH + lex->look.type * STATE_WIDTH;
+        next_type = lex->eof_flag ? EOF_TYPE : lex->look.type;
+        next_index = state * TABLE_WIDTH + next_type * STATE_WIDTH;
         next_state = parser_table[next_index];
         next_commands = parser_table[next_index + 1];
 
+#ifdef DEBUG_TINYPARSE
         printf("%i -- %s(%i) --> %i ( %i ", state, 
             lex->look.type_name, lex->look.type, next_state, next_commands);
+#endif
 
         // There was a syntax error
         if (next_state == -1)
@@ -169,8 +173,10 @@ Document PARSE_NAME(
         state = next_state;
         EXEC_COMMAND(next_commands);
         if (!ignore_flag) LEXER_NEXT(lex);
+#ifdef DEBUG_TINYPARSE
         else printf("ignore ");
         printf(")\n");
+#endif
 
         // If a return command has been called in the 
         // outer most scope, this is an accepting state

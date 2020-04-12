@@ -135,6 +135,8 @@ static void parse_define_tokens(
 		parser_add_token(parser, name, value);
     }
     tinyparse_match(lex, TinyParse_Close, ")");
+
+    parser->token_count += 1;
 }
 
 static void parse_tinylexer(
@@ -149,6 +151,7 @@ static void parse_tinylexer(
 	LOG("Lexer: %s\n", file_path);
 
 	parse_tinylex(parser, file_path);
+    parser->token_count += 1;
 }
 
 static void parse_define(

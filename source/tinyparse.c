@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
     if (input_file_count <= 0)
     {
         printf("Error: No input files given\n");
-        printf("Try 'tinylex --help' for more information\n");
+        printf("Try 'tinyparse --help' for more information\n");
         return -1;
     }
 
