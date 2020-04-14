@@ -231,37 +231,33 @@ static void link_sub_call(
 {
     FSM *to_rule;
     int i, j;
-    int to;
+    int from, to;
+    int to_index, from_index;
 
     to_rule = &compiled_rules[link.to_rule];
     to = to_rule->start_index;
     link_rule(lex, parser, compiled_rules, to_rule);
-    for (i = 0; i < link.from.count; i++)
+
+    // Find all the transitions where the sub call 
+    // links to something and add a link
+    from = link.from_state + from_rule->start_index;
+    from_index = from * parser->table_width;
+    to_index = to * parser->table_width;
+    for (j = 0; j < parser->table_width; j += STATE_WIDTH)
     {
-        int from;
-        int to_index, from_index;
+        int transition;
 
-        // Find all the transitions where the sub call 
-        // links to something and add a link
-        from = link.from.states[i] + from_rule->start_index;
-        from_index = from * parser->table_width;
-        to_index = to * parser->table_width;
-        for (j = 0; j < parser->table_width; j += STATE_WIDTH)
+        transition = parser->table[to_index + j];
+        if (transition != -1)
         {
-            int transition;
-
-            transition = parser->table[to_index + j];
-            if (transition != -1)
-            {
-                parser->table[from_index + j] = 
-                    link.return_state + from_rule->start_index;
-                parser->table[from_index + j + 1] = 
-                    link.command_id + from_rule->command_start;
-            }
+            parser->table[from_index + j] = 
+                link.return_state + from_rule->start_index;
+            parser->table[from_index + j + 1] = 
+                link.command_id + from_rule->command_start;
         }
-
-        LOG("\t=> %i -> %i\n", from, to);
     }
+
+    LOG("\t=> %i -> %i\n", from, to);
 }
 
 static void link_rule(

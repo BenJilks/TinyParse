@@ -2,4 +2,5 @@ build/
 .vscode/
 .clang_complete
 include/tinylex.h
+intlude/tinylex_intergration_lexer.h
 test.sh

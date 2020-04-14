@@ -15,10 +15,13 @@ typedef struct _EndingStates
 
 typedef struct _Link
 {
-    EndingStates from;
+    int from_state;
     int to_rule;
     int return_state;
     int command_id;
+
+    int ins_state;
+    int ins_command;
 } Link;
 
 typedef struct _FSM

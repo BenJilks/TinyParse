@@ -120,7 +120,14 @@ void make_label(
 
         token = groups[to * TABLE_WIDTH + i];
         command = groups[to * TABLE_WIDTH + i + 1];
-        APPEND(label, "%s", type_names[token]);
+	if (token == EOF_TYPE)
+	{
+		APPEND(label, "EOF");
+	}
+	else
+	{
+        	APPEND(label, "%s", type_names[token]);
+	}
 
         if (command != -1)
         {
@@ -199,7 +206,7 @@ void create_visual(
     int state_distance = 300;
 
     file = fopen(file_path, "w");
-    fprintf(file, "<svg width=\"10000\" xmlns=\"http://www.w3.org/2000/svg\">\n");
+    fprintf(file, "<svg width=\"100000\" xmlns=\"http://www.w3.org/2000/svg\">\n");
     
     x = 100;
     y = 500;

@@ -111,23 +111,31 @@ static void create_link(
     int command_id,
     EndingStates from)
 {
-    Link link;
-
-    // Create link
-    link.to_rule = to_rule;
-    link.return_state = return_state;
-    link.command_id = command_id;
-    link.from = from;
-    
-    // Add link to state machine
-    fsm->links[fsm->link_count] = link;
-    fsm->link_count += 1;
-    if (fsm->link_count >= fsm->link_buffer)
+    int i;
+   	
+	while (fsm->link_count + from.count >= fsm->link_buffer)
     {
         fsm->link_buffer += LINK_BUFFER;
         fsm->links = realloc(fsm->links, 
             sizeof(Link) * fsm->link_buffer);
     }
+
+	for (i = 0; i < from.count; i++)
+	{
+    	Link link;
+
+    	// Create link
+    	link.to_rule = to_rule;
+    	link.return_state = return_state;
+    	link.command_id = command_id;
+    	link.from_state = from.states[i];
+		link.ins_state = -1;
+		link.ins_command = -1;
+    
+    	// Add link to state machine
+    	fsm->links[fsm->link_count] = link;
+    	fsm->link_count += 1;
+	}
 }
 
 static EndingStates compile_sub_call(
@@ -262,6 +270,33 @@ static EndingStates compile_value(
 
 #define MAX(a, b) (a) > (b) ? (a) : (b)
 
+static void insert_into_links(
+	FSM *fsm,
+	Parser *parser,
+	int ins_state,
+	int ins_command,
+	int ins_from)
+{
+	int i, link_count;
+	EndingStates from;
+
+	from.count = 1;
+	from.states[0] = ins_from;
+	link_count = fsm->link_count;
+	for (i = 0; i < link_count; i++)
+	{
+		Link *link;
+
+		link = &fsm->links[i];
+		if (link->from_state == ins_from)
+		{
+			link->from_state = ins_state;
+			create_link(fsm, link->to_rule, 
+				ins_state, ins_command, from);
+		}
+	}
+}
+
 static void insert_state(
 	FSM *fsm,
 	Parser *parser,
@@ -269,9 +304,9 @@ static void insert_state(
 	int ins_command,
 	EndingStates from)
 {
-	int i, j;
+	int i, j, k;
 	int ins_index;
-
+	
 	ins_index = ins_state * parser->table_width;
 	for (i = 0; i < from.count; i++)
 	{
@@ -284,7 +319,7 @@ static void insert_state(
 		{
 			int og_transition;
 			int og_command;
-
+			
 			og_transition = fsm->table[og_index + j];
 			og_command = fsm->table[og_index + j + 1];
 			if (og_transition != -1)
@@ -295,6 +330,9 @@ static void insert_state(
 				fsm->table[ins_index + j + 1] = og_command;
 			}
 		}
+
+		insert_into_links(fsm, parser, 
+			ins_state, ins_command, from_state);
 	}
 }
 
@@ -313,8 +351,8 @@ static void mark_type(
     type_state = new_state(fsm, parser);
 
     // Create transitions
-	insert_state(fsm, parser, 
-		type_state, command_id, from);
+    insert_state(fsm, parser, 
+        type_state, command_id, from);
 }
 
 static EndingStates compile_or(
