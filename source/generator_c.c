@@ -59,13 +59,31 @@ static void generate_headers(
     Parser *parser)
 {
 	char *name_lower;
+    int is_first_node;
 
 	name_lower = to_lower(parser->project_name);
     fprintf(output, "\n");
 	fprintf(output, "#define DEBUG_TABLE_NAME %s_debug_table\n", name_lower);
 	fprintf(output, "#define PARSE_NAME	%s_parse\n", name_lower);
 	fprintf(output, "#define FREE_DOCUMENT_NAME	%s_free_document\n", name_lower);
+	fprintf(output, "#define TYPE_NAME_NAME	%s_type_name\n", name_lower);
 	free(name_lower);
+
+    is_first_node = 1;
+    fprintf(output, "typedef enum _NodeType\n{\n");
+    FOR_EACH_RULE(rule, name,
+    {
+        char *upper = to_upper(name);
+
+        fprintf(output, "\tNODE_%s", upper);
+        if (is_first_node) 
+            fprintf(output, " = %i", parser->token_count);
+        fprintf(output, ",\n");
+
+        free(upper);
+        is_first_node = 0;
+    })
+    fprintf(output, "} NodeType;\n");
 
     FOR_EACH_RULE(rule, name,
     {
@@ -248,6 +266,18 @@ static void generate_command_code(
 #endif
     }
 
+    if (command.flags & FLAG_MARK_NODE_TYPE)
+    {
+        lexer_read_string(lex, command.attr, attr);
+        fprintf(output, "((%sNode*)(value + value_pointer))->%s "
+            "= %i;", node, attr, parser->token_count + command.to_rule);
+        fprintf(output, "ignore_flag = 1;");
+
+#if DEBUG
+        fprintf(output, "printf(\"Mark node type, \");");
+#endif
+    }
+
     if (command.flags & FLAG_SET_FLAG)
     {
         lexer_read_string(lex, command.attr, attr);
@@ -366,11 +396,17 @@ void generate_implement(
 
     title_lower = to_lower(parser->project_name);
     fprintf(output, "\n#define TABLE_WIDTH %i\n", parser->table_width);
+    fprintf(output, "#define PARSER_TOKEN_COUNT %i\n", parser->token_count);
     fprintf(output, "#define EOF_TYPE %i\n", parser->token_count - 1);
     fprintf(output, "#define TABLE_SIZE %i\n", parser->table_size);
     fprintf(output, "#define ENTRY_POINT %i\n", parser->entry_index);
     fprintf(output, "#define LEXER_NEXT %s_next\n", title_lower);
     free(title_lower);
+
+    fprintf(output, "\nstatic const char *node_name[] = { ");
+    for (i = 0; i < parser->rule_count; i++)
+        fprintf(output, "\"%s\", ", parser->rules[i].name);
+    fprintf(output, "};\n");
 
     fprintf(output, "\nstatic char parser_table[] = \n{\n");
     for (i = 0; i < parser->table_size; i++)

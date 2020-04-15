@@ -3,15 +3,16 @@
 
 #include "tinylex.h"
 
-#define FLAG_NOP        0b00000000
-#define FLAG_SET        0b00000001
-#define FLAG_PUSH_SUB   0b00000010
-#define FLAG_CALL       0b00000100
-#define FLAG_RETURN     0b00001000
-#define FLAG_MARK_TYPE  0b00010000
-#define FLAG_SET_FLAG   0b00100000
-#define FLAG_UNSET_FLAG 0b01000000
-#define FLAG_NULL       0b10000000
+#define FLAG_NOP            0b000000000
+#define FLAG_SET            0b000000001
+#define FLAG_PUSH_SUB       0b000000010
+#define FLAG_CALL           0b000000100
+#define FLAG_RETURN         0b000001000
+#define FLAG_MARK_TYPE      0b000010000
+#define FLAG_MARK_NODE_TYPE 0b000100000
+#define FLAG_SET_FLAG       0b001000000
+#define FLAG_UNSET_FLAG     0b010000000
+#define FLAG_NULL           0b100000000
 
 typedef struct _Command
 {

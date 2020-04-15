@@ -274,8 +274,8 @@ static void insert_into_links(
 	FSM *fsm,
 	Parser *parser,
 	int ins_state,
-	int ins_command,
-	int ins_from)
+	int ins_from,
+    Token label)
 {
 	int i, link_count;
 	EndingStates from;
@@ -290,7 +290,14 @@ static void insert_into_links(
 		link = &fsm->links[i];
 		if (link->from_state == ins_from)
 		{
+            int ins_command;
+
 			link->from_state = ins_state;
+
+            ins_command = new_command(
+                fsm, FLAG_MARK_NODE_TYPE, label);
+            fsm->commands[ins_command].to_rule = link->to_rule;
+
 			create_link(fsm, link->to_rule, 
 				ins_state, ins_command, from);
 		}
@@ -302,6 +309,7 @@ static void insert_state(
 	Parser *parser,
 	int ins_state,
 	int ins_command,
+    Token label,
 	EndingStates from)
 {
 	int i, j, k;
@@ -332,7 +340,7 @@ static void insert_state(
 		}
 
 		insert_into_links(fsm, parser, 
-			ins_state, ins_command, from_state);
+			ins_state, from_state, label);
 	}
 }
 
@@ -351,8 +359,8 @@ static void mark_type(
     type_state = new_state(fsm, parser);
 
     // Create transitions
-    insert_state(fsm, parser, 
-        type_state, command_id, from);
+    insert_state(fsm, parser, type_state, 
+        command_id, label, from);
 }
 
 static EndingStates compile_or(

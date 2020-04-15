@@ -1,0 +1,8 @@
+project Test
+define tinylexer sub_node_if.tinylex
+
+A		( test )
+B		( for )
+
+Entry		( A | B : type ) 
+

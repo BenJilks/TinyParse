@@ -53,5 +53,6 @@ typedef struct _Document
 void DEBUG_TABLE_NAME();
 Document PARSE_NAME(LexerStream *lex);
 void FREE_DOCUMENT_NAME(Document *doc);
+const char *TYPE_NAME_NAME(int type);
 
 #endif // TINYPARSE_H
