@@ -43,6 +43,7 @@ static int new_command(
     command.flags = flags;
     command.node = fsm->name;
     command.attr = attr;
+    command.peek_count = 0;
 
     // Get a new ID and add it to the FSM
     if (fsm->command_count + 1 >= fsm->command_buffer)
@@ -77,8 +78,8 @@ static void create_transision(
 
     from_index = from_state * parser->table_width;
     table_index = from_index + token_index * STATE_WIDTH;
-    fsm->table[table_index] = state;
-    fsm->table[table_index + 1] = command_id;
+    *(STATE_ID_TYPE*)(fsm->table + table_index) = state;
+    fsm->table[table_index + STATE_ID_SIZE] = command_id;
 }
 
 static void create_all_transition(
@@ -95,7 +96,7 @@ static void create_all_transition(
         int from_state;
 
         from_state = from.states[i];
-        for (j = 0; j < parser->table_width/2; j++)
+        for (j = 0; j < parser->token_count; j++)
         {
             create_transision(fsm, parser, 
                 from_state, to_state, 
@@ -332,10 +333,10 @@ static void insert_state(
 			og_command = fsm->table[og_index + j + 1];
 			if (og_transition != -1)
 			{
-				fsm->table[og_index + j + 0] = ins_state;
-				fsm->table[og_index + j + 1] = ins_command;
-				fsm->table[ins_index + j + 0] = og_transition;
-				fsm->table[ins_index + j + 1] = og_command;
+                *(STATE_ID_TYPE*)(fsm->table + og_index + j) = ins_state;
+				fsm->table[og_index + j + STATE_ID_SIZE] = ins_command;
+                *(STATE_ID_TYPE*)(fsm->table + ins_index + j) = og_transition;
+				fsm->table[ins_index + j + STATE_ID_SIZE] = og_command;
 			}
 		}
 
@@ -516,19 +517,8 @@ static EndingStates create_ending_transitions(
     // Create transisitions to ending state
     ending_state = new_state(fsm, parser);
     command_id = new_command(fsm, FLAG_RETURN, TK_NULL);
-    for (i = 0; i < from.count; i++)
-    {
-        int state_index, token_index;
-        LOG("\t%i --*--> end\n", from.states[i]);
-
-        state_index = from.states[i] * parser->table_width;
-        for (j = 0; j < parser->table_width; j += STATE_WIDTH)
-        {
-            token_index = state_index + j;
-            fsm->table[token_index + 0] = ending_state;
-            fsm->table[token_index + 1] = command_id;
-        }
-    }
+    create_all_transition(fsm, parser, 
+        ending_state, command_id, from);
 
     // Create and return ending state
     endings.count = 1;

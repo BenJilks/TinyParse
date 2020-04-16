@@ -12,7 +12,6 @@ static char parser_table[] = {};
 #endif
 
 //#define DEBUG_TINYPARSE
-#define STATE_WIDTH 2
 #define ALLOCATION_BUFFER 1024
 
 #define FLAG_NOP            0b000000000
@@ -109,9 +108,9 @@ void DUBUG_TABLE_NAME()
             int to, command;
             const char *name;
             
-            to = parser_table[i * TABLE_WIDTH + j + 0];
-            command = parser_table[i * TABLE_WIDTH + j + 1];
-            name = type_names[j / 2];
+            to = *(STATE_ID_TYPE*)(parser_table + i * TABLE_WIDTH + j + 0);
+            command = parser_table[i * TABLE_WIDTH + j + STATE_ID_SIZE];
+            name = type_names[j / STATE_WIDTH];
             if (to != -1)
             {
                 printf("%i -%s-> %i (%i)\n", i, name, to, command);
@@ -151,8 +150,8 @@ Document PARSE_NAME(
         // Get next state
         next_type = lex->eof_flag ? EOF_TYPE : lex->look.type;
         next_index = state * TABLE_WIDTH + next_type * STATE_WIDTH;
-        next_state = parser_table[next_index];
-        next_commands = parser_table[next_index + 1];
+        next_state = *(STATE_ID_TYPE*)(parser_table + next_index);
+        next_commands = parser_table[next_index + STATE_ID_SIZE];
 
 #ifdef DEBUG_TINYPARSE
         printf("%i -- %s(%i) --> %i ( %i ", state, 

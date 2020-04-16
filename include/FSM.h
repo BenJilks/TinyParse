@@ -4,8 +4,11 @@
 #include "rule.h"
 #include "parser.h"
 
-#define BUFFER_SIZE 80
-#define STATE_WIDTH 2
+#define BUFFER_SIZE             80
+#define STATE_ID_TYPE           short
+#define STATE_ID_SIZE           sizeof(STATE_ID_TYPE)
+#define STATE_COMMAND_ID_SIZE   1
+#define STATE_WIDTH             (STATE_ID_SIZE + STATE_COMMAND_ID_SIZE)
 
 typedef struct _EndingStates
 {

@@ -250,9 +250,9 @@ static void link_sub_call(
         transition = parser->table[to_index + j];
         if (transition != -1)
         {
-            parser->table[from_index + j] = 
+            *(STATE_ID_TYPE*)(parser->table + from_index + j) = 
                 link.return_state + from_rule->start_index;
-            parser->table[from_index + j + 1] = 
+            parser->table[from_index + j + STATE_ID_SIZE] = 
                 link.command_id + from_rule->command_start;
         }
     }
@@ -295,6 +295,7 @@ static int link_compiled_rules(
     int start;
     int entry_index;
     int i, j;
+    int table_size;
 
     // Find total table size
     parser->table_size = 0;
@@ -328,8 +329,10 @@ static int link_compiled_rules(
     }
 
     // Allocate table
-    parser->table = malloc(parser->table_size * 
-        parser->table_width);
+    table_size = parser->table_size * 
+        parser->table_width;
+    parser->table = malloc(table_size);
+    memset(parser->table, -1, table_size);
 
     // Link tables
     for (i = 0; i < parser->rule_count; i++)
@@ -342,14 +345,14 @@ static int link_compiled_rules(
             int to_state, command;
 
             // Find new state values
-            to_state = rule->table[j] != -1 ? 
-                rule->table[j] + rule->start_index : -1;
-            command = rule->table[j + 1] != -1 ?
-                rule->table[j + 1] + rule->command_start : -1;
+            to_state = *(STATE_ID_TYPE*)(rule->table + j) != -1 ? 
+                (*(STATE_ID_TYPE*)(rule->table + j) + rule->start_index) : -1;
+            command = rule->table[j + STATE_ID_SIZE] != -1 ?
+                rule->table[j + STATE_ID_SIZE] + rule->command_start : -1;
 
             // Add them to the table
-            parser->table[start + j] = to_state;
-            parser->table[start + j + 1] = command;
+            *(STATE_ID_TYPE*)(parser->table + start + j) = to_state;
+            parser->table[start + j + STATE_ID_SIZE] = command;
         }
     }
 

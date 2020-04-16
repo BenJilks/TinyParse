@@ -386,6 +386,12 @@ static void generate_commands(
     fprintf(output, "}\n");
 }
 
+#define TYPE_AS_STR(x) \
+    (sizeof(x) == 1 ? "char" : \
+    (sizeof(x) == 2 ? "short" : \
+    (sizeof(x) == 4 ? "int" : \
+                      "long long")))
+
 void generate_implement(
     FILE* output,
     LexerStream *lex,
@@ -401,6 +407,12 @@ void generate_implement(
     fprintf(output, "#define TABLE_SIZE %i\n", parser->table_size);
     fprintf(output, "#define ENTRY_POINT %i\n", parser->entry_index);
     fprintf(output, "#define LEXER_NEXT %s_next\n", title_lower);
+
+    fprintf(output, "#define STATE_ID_TYPE %s\n", TYPE_AS_STR(STATE_ID_TYPE));
+    fprintf(output, "#define STATE_ID_SIZE %i\n", STATE_ID_SIZE);
+    fprintf(output, "#define STATE_COMMAND_ID_SIZE %i\n", STATE_COMMAND_ID_SIZE);
+    fprintf(output, "#define STATE_WIDTH %i\n", STATE_WIDTH);
+
     free(title_lower);
 
     fprintf(output, "\nstatic const char *node_name[] = { ");
