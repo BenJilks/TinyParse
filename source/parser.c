@@ -222,6 +222,332 @@ static void link_rule(
     FSM *compiled_rules,
     FSM *rule);
 
+static int new_state(
+    Parser *parser)
+{
+    parser->table_size += 1;
+    parser->table = realloc(parser->table,
+        parser->table_size * parser->table_width);
+
+    memset(parser->table + 
+        (parser->table_size - 1) * parser->table_width, 
+        -1, parser->table_width);
+    return parser->table_size - 1;
+}
+
+static int new_command(
+    Parser *parser,
+    int flags)
+{
+    Command command;
+
+    parser->command_count += 1;
+    parser->commands = realloc(parser->commands, 
+        sizeof(Command) * parser->command_count);
+
+    command.flags = flags;
+    parser->commands[parser->command_count - 1] = command;
+
+    return parser->command_count - 1;
+}
+
+static void set_transition(
+    Parser *parser,
+    int from_state,
+    int to_state,
+    int command_id,
+    int token_type)
+{
+    int from_index;
+
+    from_index = from_state * parser->table_width + (token_type * STATE_WIDTH);
+
+    *(STATE_ID_TYPE*)(parser->table + from_index) = to_state;
+    parser->table[from_index + STATE_ID_SIZE] = command_id;
+}
+
+static void copy_transitions(
+    LexerStream *lex,
+    Parser *parser,
+    int copy_from_state,
+    int copy_to_state,
+    int to_state,
+    int command_id);
+
+static int next_consuming_state(
+    Parser *parser,
+    int from_state,
+    int from_command_id,
+    int token_type,
+    int *call_stack,
+    int *call_stack_pointer)
+{
+    int from_index;
+
+    while (from_command_id != -1)
+    {
+        Command *command;
+
+        command = &parser->commands[from_command_id];
+        if (command->flags & FLAG_CALL)
+        {
+            int return_state;
+            int return_command_id;
+            LOG("Follow function call %i -> %i\n", 
+                from_state, parser->rules[command->to_rule].start_index);
+
+            from_index = from_state * parser->table_width + token_type * STATE_WIDTH;
+            return_state = *(STATE_ID_TYPE*)(parser->table + from_index);
+            call_stack[(*call_stack_pointer)++] = return_state;
+
+            from_state = parser->rules[command->to_rule].start_index;
+            from_command_id = parser->table[
+                from_state * parser->table_width + 
+                token_type * STATE_WIDTH + 
+                STATE_ID_SIZE];
+            continue;
+        }
+
+        if (command->flags & FLAG_MARK_TYPE ||
+            command->flags & FLAG_MARK_NODE_TYPE ||
+            command->flags & FLAG_NULL ||
+            command->flags & FLAG_PUSH_SUB ||
+            command->flags & FLAG_PEEK)
+        {
+            from_index = from_state * parser->table_width + token_type * STATE_WIDTH;
+            LOG("Follow ignore %i -> %i\n", 
+                from_state, *(STATE_ID_TYPE*)(parser->table + from_index));
+            from_state = *(STATE_ID_TYPE*)(parser->table + from_index);
+            from_command_id = parser->table[
+                from_state * parser->table_width + token_type * STATE_WIDTH + STATE_ID_SIZE];
+            continue;
+        }
+
+        if (command->flags & FLAG_RETURN)
+        {
+            if (*call_stack_pointer <= 0)
+            {
+                LOG("End of call stack\n");
+                break;
+            }
+
+            from_state = call_stack[--(*call_stack_pointer)];
+            from_command_id = parser->table[
+                from_state * parser->table_width + token_type * STATE_WIDTH + STATE_ID_SIZE];
+            LOG("Return state -> %i\n", from_state);
+            continue;
+        }
+
+        if (command->flags & FLAG_SET_FLAG ||
+            command->flags & FLAG_UNSET_FLAG)
+        {
+            return -1;
+        }
+
+        break;
+    }
+
+    return from_state;
+}
+
+static int follow_call_transision(
+    Parser *parser,
+    int from_state,
+    int from_command_id,
+    int token_type)
+{
+    int from_index;
+    int call_stack[80];
+    int call_stack_pointer;
+
+    LOG("Trying to follow %i with token %i and command %i\n", 
+        from_state, token_type, from_command_id);
+
+    // Follow until it finds a consuming state
+    call_stack_pointer = 0;
+    from_state = next_consuming_state(parser, 
+        from_state, from_command_id, token_type, 
+        call_stack, &call_stack_pointer);
+
+    // Follow where this state points to
+    from_index = from_state * parser->table_width + token_type * STATE_WIDTH;
+    LOG("Follow state %i -> %i\n", from_state, *(STATE_ID_TYPE*)(parser->table + from_index));
+    from_state = *(STATE_ID_TYPE*)(parser->table + 
+        from_index);
+    from_command_id = parser->table[
+        from_state * parser->table_width + token_type * STATE_WIDTH + STATE_ID_SIZE];
+
+    // Find the next consuming state after then
+    from_state = next_consuming_state(parser, 
+        from_state, from_command_id, token_type,
+        call_stack, &call_stack_pointer);
+    
+    return from_state;
+}
+
+static int is_return_state(
+    Parser *parser,
+    int state)
+{
+    int index;
+    int first_commnad_id;
+    Command *first_command;
+
+    if (state == -1)
+        return 1;
+
+    index = state * parser->table_width;
+    first_commnad_id = parser->table[index + STATE_ID_SIZE];
+    if (first_commnad_id == -1)
+        return 0;
+    
+    first_command = &parser->commands[first_commnad_id];
+    return first_command->flags & FLAG_RETURN;
+}
+
+static void resolve_collition(
+    LexerStream *lex,
+    Parser *parser,
+    int copy_from_state,
+    int copy_to_state,
+    int to_state_b,
+    int command_id_b,
+    int token_type)
+{
+    int next_state_a, is_return_state_a;
+    int next_state_b, is_return_state_b;
+    int to_state_a;
+    int command_id_a;
+    int peek_state;
+    int peek_command_id;
+    int index, i;
+
+    debug_start_scope();
+    LOG("Collition found at %i, fixing %i -> %i\n", token_type, copy_from_state, copy_to_state);
+
+    peek_state = new_state(parser);
+    peek_command_id = new_command(parser, FLAG_PEEK);
+
+    index = copy_to_state * parser->table_width + token_type * STATE_WIDTH;
+    to_state_a = *(STATE_ID_TYPE*)(parser->table + index);
+    command_id_a = parser->table[index + STATE_ID_SIZE];
+
+    next_state_a = follow_call_transision(parser, to_state_a, command_id_a, token_type);
+    next_state_b = follow_call_transision(parser, to_state_b, command_id_b, token_type);
+    is_return_state_a = is_return_state(parser, next_state_a);
+    is_return_state_b = is_return_state(parser, next_state_b);
+
+    if (is_return_state_a && is_return_state_b)
+    {
+        // TODO: handles this error
+        printf("Error: Two branches are identical\n");
+        return;
+    }
+
+    debug_prefix();
+    for (i = 0; i < parser->table_width / STATE_WIDTH; i++)
+    {
+        int index_a, index_b;
+        int transition_a, transition_b;
+
+        index_a = next_state_a * parser->table_width + i * STATE_WIDTH;
+        index_b = next_state_b * parser->table_width + i * STATE_WIDTH;
+        transition_a = *(STATE_ID_TYPE*)(parser->table + index_a);
+        transition_b = *(STATE_ID_TYPE*)(parser->table + index_b);
+
+        // Secondary collition
+        if (transition_a != -1 && transition_b != -1)
+        {
+            if (is_return_state_a)
+            {
+                _LOG("%i -> B, ", i);
+                set_transition(parser, peek_state, 
+                    to_state_b, command_id_b, i);
+                continue;
+            }
+            
+            if (is_return_state_b)
+            {
+                _LOG("%i -> A, ", i);
+                set_transition(parser, peek_state, 
+                    to_state_a, command_id_a, i);
+                continue;
+            }
+
+            _LOG("%i -> A/B, ", i);
+            printf("FIXME: handle secondary collisions\n");
+            continue;
+        }
+
+        if (transition_a != -1)
+        {
+            _LOG("%i -> A, ", i);
+            set_transition(parser, peek_state, 
+                to_state_a, command_id_a, i);
+            continue;
+        }
+
+        if (transition_b != -1)
+        {
+            _LOG("%i -> B, ", i);
+            set_transition(parser, peek_state, 
+                to_state_b, command_id_b, i);
+            continue;
+        }
+
+        _LOG("%i -> Err, ", i);
+    }
+    _LOG("\n");
+
+    set_transition(parser, copy_to_state, 
+        peek_state, peek_command_id, token_type);
+
+    debug_end_scope();
+}
+
+static void copy_transitions(
+    LexerStream *lex,
+    Parser *parser,
+    int copy_from_state,
+    int copy_to_state,
+    int to_state,
+    int command_id)
+{
+    LOG("\t=> %i -> %i (to: %i, command: %i)\n", 
+        copy_from_state, copy_to_state, 
+        to_state, command_id);
+    int i;
+    int copy_from_index;
+    int copy_to_index;
+    
+    copy_from_index = copy_from_state * parser->table_width;
+    copy_to_index = copy_to_state * parser->table_width;
+    for (i = 0; i < parser->table_width / STATE_WIDTH; i++)
+    {
+        int from_tranition;
+        int to_transition;
+        int to_command_id;
+        int form_command_id;
+
+        from_tranition = *(STATE_ID_TYPE*)(parser->table + copy_from_index + i * STATE_WIDTH);
+        form_command_id = parser->table[copy_from_index + i * STATE_WIDTH + STATE_ID_SIZE];
+        to_transition = *(STATE_ID_TYPE*)(parser->table + copy_to_index + i * STATE_WIDTH);
+        to_command_id = parser->table[copy_to_index + i * STATE_WIDTH + STATE_ID_SIZE];
+        if (from_tranition != -1)
+        {
+            int should_overwrite;
+
+            should_overwrite = to_command_id != -1 &&
+                parser->commands[to_command_id].flags & FLAG_UNSET_FLAG;
+
+            if (to_transition != -1 && !should_overwrite)
+                resolve_collition(lex, parser, copy_from_state, copy_to_state, to_state, command_id, i);
+            else
+                set_transition(parser, copy_to_state, to_state, command_id, i);
+        }
+    }
+}
+
 static void link_sub_call(
     LexerStream *lex,
     Parser *parser,
@@ -231,33 +557,25 @@ static void link_sub_call(
 {
     FSM *to_rule;
     int i, j;
-    int from, to;
-    int to_index, from_index;
+    int copy_from_state; 
+    int copy_to_state;
+    int to_state;
+    int command_id;
 
     to_rule = &compiled_rules[link.to_rule];
-    to = to_rule->start_index;
     link_rule(lex, parser, compiled_rules, to_rule);
 
     // Find all the transitions where the sub call 
     // links to something and add a link
-    from = link.from_state + from_rule->start_index;
-    from_index = from * parser->table_width;
-    to_index = to * parser->table_width;
-    for (j = 0; j < parser->table_width; j += STATE_WIDTH)
-    {
-        int transition;
+    copy_from_state = to_rule->start_index;
+    copy_to_state = link.from_state + from_rule->start_index;
+    to_state = link.return_state + from_rule->start_index; 
+    command_id = link.command_id + from_rule->command_start;
+    copy_transitions(lex, parser, 
+        copy_from_state, copy_to_state, 
+        to_state, command_id);
 
-        transition = parser->table[to_index + j];
-        if (transition != -1)
-        {
-            *(STATE_ID_TYPE*)(parser->table + from_index + j) = 
-                link.return_state + from_rule->start_index;
-            parser->table[from_index + j + STATE_ID_SIZE] = 
-                link.command_id + from_rule->command_start;
-        }
-    }
-
-    LOG("\t=> %i -> %i\n", from, to);
+    //LOG("\t=> %i -> %i\n", copy_from_state, copy_to_state);
 }
 
 static void link_rule(

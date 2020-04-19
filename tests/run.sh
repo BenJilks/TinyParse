@@ -21,5 +21,6 @@ do_test label_optional
 do_test sub_node
 do_test sub_node_recursive
 do_test sub_node_if
+do_test combine_rules
 echo "Ran $TEST_COUNT test(s)"
 

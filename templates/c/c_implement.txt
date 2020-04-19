@@ -25,6 +25,8 @@ static char parser_table[] = {};
 #define FLAG_UNSET_FLAG     0b010000000
 #define FLAG_NULL           0b100000000
 
+#define PEEK_QUEUE_SIZE 80
+
 typedef struct _Allocator
 {
     MemoryList *memory;
@@ -119,6 +121,30 @@ void DUBUG_TABLE_NAME()
     }
 }
 
+#ifdef DEBUG_TINYPARSE
+
+#define PEEK \
+    LEXER_NEXT(lex); \
+    printf("Push %s, ", look.type_name); \
+    peek_queue[peek_queue_end] = look; \
+    peek_queue[peek_queue_end+1] = lex->look; \
+    peek_queue_end = (peek_queue_end + 2) % PEEK_QUEUE_SIZE; \
+    peek_queue_rewind_count += 1; \
+    printf("Queue [end=%i, start=%i], ", peek_queue_start, peek_queue_end); \
+    look = lex->look; \
+
+#else
+
+#define PEEK \
+    LEXER_NEXT(lex); \
+    peek_queue[peek_queue_end] = look; \
+    peek_queue[peek_queue_end+1] = lex->look; \
+    peek_queue_end = (peek_queue_end + 2) % PEEK_QUEUE_SIZE; \
+    peek_queue_rewind_count += 1; \
+    look = lex->look; \
+
+#endif
+
 Document PARSE_NAME(
     LexerStream *lex)
 {
@@ -128,6 +154,15 @@ Document PARSE_NAME(
     int next_index, next_type;
     int call_command, value_stack_pointer;
     int ignore_flag;
+    int use_peek;
+
+    // Lexer
+    int eof_flag;
+    Token look;
+    Token peek_queue[PEEK_QUEUE_SIZE];
+    int peek_queue_start;
+    int peek_queue_end;
+    int peek_queue_rewind_count;
 
     // Stacks
     Allocator alloc;
@@ -144,22 +179,33 @@ Document PARSE_NAME(
     alloc = create_allocator();
     value_pointer = 0;
     value = malloc(1024);
+    peek_queue_start = 0;
+    peek_queue_end = 0;
+    peek_queue_rewind_count = 0;
 
+    look = lex->look;
+    eof_flag = lex->eof_flag;
     for (;;)
     {
         // Get next state
-        next_type = lex->eof_flag ? EOF_TYPE : lex->look.type;
+        next_type = eof_flag ? EOF_TYPE : look.type;
         next_index = state * TABLE_WIDTH + next_type * STATE_WIDTH;
-        next_state = *(STATE_ID_TYPE*)(parser_table + next_index);
+        next_state = *(STATE_ID_TYPE*)(parser_table + next_index); 
         next_commands = parser_table[next_index + STATE_ID_SIZE];
 
 #ifdef DEBUG_TINYPARSE
         printf("%i -- %s(%i) --> %i ( %i ", state, 
-            lex->look.type_name, lex->look.type, next_state, next_commands);
+            look.type_name, look.type, next_state, next_commands);
 #endif
 
+        // Execute command and go to the next state
+        ignore_flag = 0;
+        use_peek = 0;
+        state = next_state;
+        EXEC_COMMAND(next_commands);
+
         // There was a syntax error
-        if (next_state == -1)
+        if (state == -1)
         {
             lexer_error(lex, lex->look, 
                 "Unexpected token");
@@ -168,11 +214,30 @@ Document PARSE_NAME(
             break;
         }
 
-        // Execute command and go to the next state
-        ignore_flag = 0;
-        state = next_state;
-        EXEC_COMMAND(next_commands);
-        if (!ignore_flag) LEXER_NEXT(lex);
+        if (!ignore_flag || peek_queue_rewind_count > 0)
+        {
+            if (peek_queue_end != peek_queue_start)
+            {
+                if (!use_peek)
+                {
+                    look = peek_queue[peek_queue_start];
+                    peek_queue_start = (peek_queue_start + 1) % PEEK_QUEUE_SIZE;
+
+                    if (peek_queue_rewind_count > 0)
+                        peek_queue_rewind_count -= 1;
+
+#ifdef DEBUG_TINYPARSE
+                    printf("Pop %s, ", look.type_name);
+#endif
+                }
+            }
+            else
+            {
+                LEXER_NEXT(lex);
+                eof_flag = lex->eof_flag;
+                look = lex->look;
+            }
+        }
 #ifdef DEBUG_TINYPARSE
         else printf("ignore ");
         printf(")\n");

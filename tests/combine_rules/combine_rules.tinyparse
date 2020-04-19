@@ -1,0 +1,14 @@
+project Test
+define tinylexer combine_rules.tinylex
+
+X		( test )
+A		( X | if )
+B		( X for )
+
+C		( A )
+D		( B )
+
+Entry		(   < C : c > 
+		  | < D : d >
+ 		  : type )
+

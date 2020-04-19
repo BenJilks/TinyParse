@@ -163,8 +163,10 @@ static EndingStates compile_sub_call(
     rule_index = parser_find_rule_index(parser, name);
     if (rule_index == -1)
     {
-        lexer_error(lex, token, 
-            "No rule or token with that name found");
+        char msg[80];
+
+        sprintf(msg, "No rule or token called '%s' found", name);
+        lexer_error(lex, token, msg);
         return endings;
     }
 
@@ -274,7 +276,6 @@ static EndingStates compile_value(
 static void insert_into_links(
 	FSM *fsm,
 	Parser *parser,
-	int ins_state,
 	int ins_from,
     Token label)
 {
@@ -283,24 +284,18 @@ static void insert_into_links(
 
 	from.count = 1;
 	from.states[0] = ins_from;
-	link_count = fsm->link_count;
-	for (i = 0; i < link_count; i++)
+	for (i = 0; i < fsm->link_count; i++)
 	{
 		Link *link;
 
 		link = &fsm->links[i];
 		if (link->from_state == ins_from)
 		{
-            int ins_command;
+            Command *command;
 
-			link->from_state = ins_state;
-
-            ins_command = new_command(
-                fsm, FLAG_MARK_NODE_TYPE, label);
-            fsm->commands[ins_command].to_rule = link->to_rule;
-
-			create_link(fsm, link->to_rule, 
-				ins_state, ins_command, from);
+            command = &fsm->commands[link->command_id];
+            command->flags |= FLAG_MARK_NODE_TYPE;
+            command->attr = label;
 		}
 	}
 }
@@ -324,13 +319,13 @@ static void insert_state(
 		
 		from_state = from.states[i];
 		og_index = from_state * parser->table_width;
-		for (j = 0; j < parser->table_width; j+=2)
+		for (j = 0; j < parser->table_width; j += STATE_WIDTH)
 		{
 			int og_transition;
 			int og_command;
 			
-			og_transition = fsm->table[og_index + j];
-			og_command = fsm->table[og_index + j + 1];
+			og_transition = *(STATE_ID_TYPE*)(fsm->table + og_index + j);
+			og_command = fsm->table[og_index + j + STATE_ID_SIZE];
 			if (og_transition != -1)
 			{
                 *(STATE_ID_TYPE*)(fsm->table + og_index + j) = ins_state;
@@ -341,7 +336,7 @@ static void insert_state(
 		}
 
 		insert_into_links(fsm, parser, 
-			ins_state, from_state, label);
+			from_state, label);
 	}
 }
 

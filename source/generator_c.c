@@ -252,10 +252,10 @@ static void generate_command_code(
 {
     char node[80];
     char attr[80];
-    lexer_read_string(lex, command.node, node);
 
     if (command.flags & FLAG_MARK_TYPE)
     {
+        lexer_read_string(lex, command.node, node);
         lexer_read_string(lex, command.attr, attr);
         fprintf(output, "((%sNode*)(value + value_pointer))->%s "
             "= lex->look.type;", node, attr);
@@ -268,6 +268,7 @@ static void generate_command_code(
 
     if (command.flags & FLAG_MARK_NODE_TYPE)
     {
+        lexer_read_string(lex, command.node, node);
         lexer_read_string(lex, command.attr, attr);
         fprintf(output, "((%sNode*)(value + value_pointer))->%s "
             "= %i;", node, attr, parser->token_count + command.to_rule);
@@ -280,6 +281,7 @@ static void generate_command_code(
 
     if (command.flags & FLAG_SET_FLAG)
     {
+        lexer_read_string(lex, command.node, node);
         lexer_read_string(lex, command.attr, attr);
         fprintf(output, "((%sNode*)(value + value_pointer))->%s "
             "= 1;", node, attr);
@@ -292,6 +294,7 @@ static void generate_command_code(
 
     if (command.flags & FLAG_UNSET_FLAG)
     {
+        lexer_read_string(lex, command.node, node);
         lexer_read_string(lex, command.attr, attr);
         fprintf(output, "((%sNode*)(value + value_pointer))->%s "
             "= 0;", node, attr);
@@ -312,6 +315,7 @@ static void generate_command_code(
         int to_state;
 
         to_state = parser->rules[command.to_rule].start_index;
+        lexer_read_string(lex, command.node, node);
         fprintf(output, "call_stack[call_stack_pointer++] = state;");
         fprintf(output, "call_stack[call_stack_pointer++] = value_pointer;");
         fprintf(output, "state = %i;", to_state);
@@ -326,6 +330,7 @@ static void generate_command_code(
     
     if (command.flags & FLAG_SET)
     {
+        lexer_read_string(lex, command.node, node);
         lexer_read_string(lex, command.attr, attr);
         fprintf(output, "((%sNode*)(value + value_pointer))->%s"
             " = lex->look;", node, attr);
@@ -333,6 +338,7 @@ static void generate_command_code(
 
     if (command.flags & FLAG_PUSH_SUB)
     {
+        lexer_read_string(lex, command.node, node);
         lexer_read_string(lex, command.attr, attr);
         fprintf(output, "((%sNode*)(value + value_pointer))->%s = "
             "push(&alloc, value + value_pointer + sizeof(%sNode), sizeof(%sNode));",
@@ -349,6 +355,17 @@ static void generate_command_code(
 
 #if DEBUG
         fputs("printf(\"Return to: %i, \", state);", output);
+#endif
+    }
+
+    if (command.flags & FLAG_PEEK)
+    {
+        fprintf(output, "PEEK;");
+        fprintf(output, "ignore_flag = 1;");
+        fprintf(output, "use_peek = 1;");
+
+#if DEBUG
+        fputs("printf(\"Peek %i, \", next_state);", output);
 #endif
     }
 }
