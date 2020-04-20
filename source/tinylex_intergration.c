@@ -44,6 +44,11 @@ void parse_tinylex(
 					if (value[i+1] != '(' && value[i+1] != ')')
 						i += 1;
 				}
+				else if (value[i] == '<' || value[i] == '>')
+				{
+					alias[alias_len] = '\\';
+					alias_len += 1;
+				}
 				alias[alias_len] = value[i];
 				alias_len += 1;
 			}

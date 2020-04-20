@@ -258,7 +258,7 @@ static void generate_command_code(
         lexer_read_string(lex, command.node, node);
         lexer_read_string(lex, command.attr, attr);
         fprintf(output, "((%sNode*)(value + value_pointer))->%s "
-            "= lex->look.type;", node, attr);
+            "= look.type;", node, attr);
         fprintf(output, "ignore_flag = 1;");
 
 #if DEBUG
@@ -333,7 +333,7 @@ static void generate_command_code(
         lexer_read_string(lex, command.node, node);
         lexer_read_string(lex, command.attr, attr);
         fprintf(output, "((%sNode*)(value + value_pointer))->%s"
-            " = lex->look;", node, attr);
+            " = look;", node, attr);
     }
 
     if (command.flags & FLAG_PUSH_SUB)
